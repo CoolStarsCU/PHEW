@@ -38,17 +38,22 @@ def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
 
     for w in range(n):
         sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
+        sp2.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], 
+                     subtract=False, highlight_fitregion=False, 
+                     selectregion=True, order=0)           
         sp2.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
-        sp2.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)            dist = sp2.specfit.EQW(plotcolor='g', fitted=False, continuum=0.5, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
+        dist = sp2.specfit.EQW(plotcolor='g', fitted=False, components=False, 
+                               annotate=True, loc='lower left', xmin=None, xmax=None)
+
         EQWs.append(dist)
-        EQWs = np.array(EQWs)
+    EQWs = np.array(EQWs)
     EQWs = EQWs*10000
 
     plt.figure()
     mu,sigma = norm.fit(EQWs) 
-    print obj, mu, sigma
+    print mu, sigma
 
-    n,bins,patches = plt.hist(EQWs,10,normed=True,facecolor='green',histtype='stepfilled')      
+    n,bins,patches = plt.hist(EQWs, 10, normed=True, facecolor='green', histtype='stepfilled')      
     y = mlab.normpdf(bins,mu,sigma)
     plt.plot(bins,y,'r--',linewidth=2)
     plt.grid(True)
