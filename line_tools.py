@@ -7,17 +7,20 @@ import numpy as np
 from scipy.stats import norm
 from astropy import log
 
-"""Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
+"""
+Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
 Args:
 ----------
 xmin,xmax - the specified interval in wavelength space  
 excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
 n - the number of Monte Carlo iterations 
+
 Returns:
 -------
 - the mean and standard deviation of the equivalent width measured n times
-- the spectrum plotted with the Voigt profile line fit (blue), the pseudo-continuum (yellow), and the approximated rectangle (green) 
-- a histogram of the EqW distribution    
+- the spectrum plotted with the Voigt profile line fit (blue), the pseudo-continuum (yellow), 
+  and the approximated rectangle (green) 
+- a histogram of the EqW distribution
 """
 
 def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
