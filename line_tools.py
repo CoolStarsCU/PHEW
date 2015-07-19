@@ -5,7 +5,7 @@ import pyspeckit as p
 import matplotlib.pyplot as plt, matplotlib.mlab as mlab
 import numpy as np
 from scipy.stats import norm
-
+from astropy import log
 
 """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
 
@@ -13,8 +13,7 @@ Args:
 ----------
 xmin,xmax - the specified interval in wavelength space  
 excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
-n - the number of times the EqW measurement is repeated to 
-
+n - the number of Monte Carlo iterations 
 
 Returns:
 -------
@@ -23,21 +22,9 @@ Returns:
 - a histogram of the EqW distribution    
 """
 
-# high-res NIRSPEC 
-D = {'2M1821':'/Users/munazzaalam/Desktop/blueseq/2m1821_61_08jun11.txt'}   
-
-# optical, low-res SALT 
-# D = {'RX1132':'/Users/munazzaalam/saltspec/RX1132-2651A_000_2014-02-27.txt'}      
-
-def equivalent_width(xmin,xmax,exclude_min,exclude_max,n):
-    for obj in D.keys():
-        obj = unicode(obj)
-
-        # for data in D[obj].keys():
-        #     data = unicode(data)
-
-            # sp = p.Spectrum(D[obj][data])
-        sp = p.Spectrum(D[obj])
+def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
+    
+        sp = p.Spectrum(filename)
         sp.xarr.units ='microns'                                                           
         sp.xarr.xtype = 'wavelength'
         sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars', color='grey')     
