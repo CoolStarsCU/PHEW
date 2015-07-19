@@ -23,35 +23,33 @@ Returns:
 """
 
 def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
-    
-        sp = p.Spectrum(filename)
-        sp.xarr.units ='microns'                                                           
-        sp.xarr.xtype = 'wavelength'
-        sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars', color='grey')     
-        sp.specfit(fittype='voigt', color='blue')                                     
-        sp.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)    
-        sp.specfit.EQW(plot=True, plotcolor='g', fitted=False, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
+    sp = p.Spectrum(filename)
+    sp.xarr.units ='microns'                                                           
+    sp.xarr.xtype = 'wavelength'
+    sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars', color='grey')     
+    sp.specfit(fittype='voigt', color='blue')                                     
+    sp.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)    
+    sp.specfit.EQW(plot=True, plotcolor='g', fitted=False, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
 
-        sp2 = sp.copy()
-        EQWs = []              
+    sp2 = sp.copy()
+    EQWs = []              
 
-        for w in range(n):
-            sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
-            sp2.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
-            sp2.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)
-            dist = sp2.specfit.EQW(plotcolor='g', fitted=False, continuum=0.5, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
-            EQWs.append(dist)
+    for w in range(n):
+        sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
+        sp2.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
+        sp2.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)            dist = sp2.specfit.EQW(plotcolor='g', fitted=False, continuum=0.5, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
+        EQWs.append(dist)
         EQWs = np.array(EQWs)
-        EQWs = EQWs*10000
+    EQWs = EQWs*10000
 
-        plt.figure()
-        mu,sigma = norm.fit(EQWs)
-        print obj, mu, sigma
+    plt.figure()
+    mu,sigma = norm.fit(EQWs) 
+    print obj, mu, sigma
 
-        n,bins,patches = plt.hist(EQWs,10,normed=True,facecolor='green',histtype='stepfilled')      
-        y = mlab.normpdf(bins,mu,sigma)
-        plt.plot(bins,y,'r--',linewidth=2)
-        plt.grid(True)
-        plt.ylabel('Probability')
-        plt.xlabel('EQW ($\AA$)')           
-        plt.show()
+    n,bins,patches = plt.hist(EQWs,10,normed=True,facecolor='green',histtype='stepfilled')      
+    y = mlab.normpdf(bins,mu,sigma)
+    plt.plot(bins,y,'r--',linewidth=2)
+    plt.grid(True)
+    plt.ylabel('Probability')
+    plt.xlabel('EQW ($\AA$)')           
+    plt.show()
