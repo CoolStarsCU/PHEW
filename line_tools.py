@@ -58,5 +58,5 @@ def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
     plt.plot(bins,y,'r--',linewidth=2)
     plt.grid(True)
     plt.ylabel('Probability')
-    plt.xlabel('EQW ($\AA$)')           
+    plt.xlabel('EQW')           
     plt.show()
