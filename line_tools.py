@@ -43,7 +43,7 @@ def equivalent_width(xmin,xmax,exclude_min,exclude_max,n):
         sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars', color='grey')     
         sp.specfit(fittype='voigt', color='blue')                                     
         sp.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], subtract=False, reset_selection=True, highlight_fitregion=False, order=0)    
-        sp.specfit.EQW(plot=True, plotcolor='g', fitted=False, continuum=0.5, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
+        sp.specfit.EQW(plot=True, plotcolor='g', fitted=False, components=False, annotate=True, loc='lower left', xmin=None, xmax=None)
 
         sp2 = sp.copy()
         EQWs = []              
