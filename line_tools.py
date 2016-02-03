@@ -11,7 +11,7 @@ from astropy import log
 Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
 Args:
 ----------
-xmin,xmax - the specified interval in wavelength space  
+xmin,xmax - the specified interval of the spectrum to plot
 excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
 n - the number of Monte Carlo iterations 
 
