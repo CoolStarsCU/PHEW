@@ -23,7 +23,7 @@ Returns:
 - a histogram of the EqW distribution
 """
 
-def equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
+def measure_equivalent_width(filename,xmin,xmax,exclude_min,exclude_max,n):
     sp = p.Spectrum(filename)
     sp.xarr.units = 'micron' 
     sp.xarr.xtype = 'wavelength'
