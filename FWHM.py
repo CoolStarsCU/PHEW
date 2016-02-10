@@ -27,7 +27,6 @@ and the FWHM (blue)
 def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
     vf = pyspeckit.spectrum.models.inherited_voigtfitter.voigt_fitter()
     
-    filename = '/Users/munazzaalam/Desktop/blueseq/2m1731_65_14apr14_ascii_hc.txt'
     sp = pyspeckit.Spectrum(filename)
     sp.xarr.units = 'micron'
     sp.xarr.xtype = 'wavelength'
