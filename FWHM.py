@@ -51,7 +51,7 @@ def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
     sp2 = sp.copy()
     FWHM = []
 
-    for w in range(500):
+    for w in range(n):
         sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
         sp2.baseline(xmin=xmin, xmax=xmax,exclude=[exclude_min, exclude_max], subtract=False,
                      reset_selection=False, highlight_fitregion=False, order=0)
