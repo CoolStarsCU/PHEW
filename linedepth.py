@@ -24,7 +24,7 @@ Returns:
 """
 
 def measure_line_depth(filename,xmin,xmax,exclude_min,exclude_max,n):
-    sp = pyspeckit.Spectrum(filename)
+    sp = p.Spectrum(filename)
     sp.xarr.units = 'micron'
     sp.xarr.xtype = 'wavelength'
     sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars',color='grey')
