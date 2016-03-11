@@ -4,6 +4,21 @@
 import pyspeckit as p
 import matplotlib.pyplot as plt
 
+"""
+Produce final plots depicting the measured Eqw, FWHM, pseudo-continuum and voigt profile fit. 
+=======
+Args:
+=======
+xmin,xmax - the specified interval of the spectrum to plot
+excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
+
+=======
+Returns:
+=======
+- the spectrum plotted with the Voigt profile line fit (magenta), the pseudo-continuum (yellow), 
+  the approximated EqW (green rectangle), and FWHM (magenta) 
+"""
+
 def final_plots(filename,xmin,xmax,exclude_min,exclude_max):
     vf = p.spectrum.models.inherited_voigtfitter.voigt_fitter()
     
