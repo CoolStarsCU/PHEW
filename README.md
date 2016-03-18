@@ -12,5 +12,4 @@ Created on July 8, 2015 from a variety of spectral line analysis routines I have
 
 ### Referencing:
 [![DOI](https://zenodo.org/badge/20971/munazzaalam/PHEW.svg)](https://zenodo.org/badge/latestdoi/20971/munazzaalam/PHEW)
-
 Please cite [PHEW](https://zenodo.org/badge/latestdoi/20971/munazzaalam/PHEW) if you use it. 
