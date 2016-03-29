@@ -25,16 +25,23 @@ and the FWHM (blue)
 """
 
 def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
-    vf = pyspeckit.spectrum.models.inherited_voigtfitter.voigt_fitter()
+    vf = p.spectrum.models.inherited_voigtfitter.voigt_fitter()
     
-    sp = pyspeckit.Spectrum(filename)
+    #read & plot in spectrum 
+    sp = p.Spectrum(filename)
     sp.xarr.units = 'micron'
     sp.xarr.xtype = 'wavelength'
     sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars',color='grey')  
+    
+    #fit pseudocontinuum
     sp.baseline(xmin=xmin, xmax=xmax,exclude=[exclude_min, exclude_max],subtract=False,
                 reset_selection=False,hightlight_fitregion=False,order=0)
+
+    #fit voigt profile
     sp.specfit(plot=True, fittype='voigt', color='blue', guesses='moments', 
                vheight=True)
+
+    #measure FWHM
     fwhm = sp.specfit.measure_approximate_fwhm(threshold='error', emission=False, 
                                                interpolate_factor=1024, plot=True, 
                                                grow_threshold=1)
@@ -46,26 +53,29 @@ def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
     plt.ylabel('Normalized Flux')
     plt.xlabel('Wavelength ($\mu m$)')
     
-   
+ 
+    #copy flux array for Monte Carlo
     sp.specfit(guesses=sp.specfit.parinfo.values)
     sp2 = sp.copy()
     FWHM = []
-
+    
+    #Monte Carlo iterations to estimate uncertainty
     for w in range(n):
         sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
         sp2.baseline(xmin=xmin, xmax=xmax,exclude=[exclude_min, exclude_max], subtract=False,
                      reset_selection=False, highlight_fitregion=False, order=0)
         sp2.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
-        dist = sp2.specfit.measure_approximate_fwhm(threshold='error', emission=False,
-                                                    interpolate_factor=1024,grow_threshold=2)
+        dist = sp2.specfit.measure_approximate_fwhm(threshold='error', emission=False,interpolate_factor=1024,grow_threshold=1)
         dist = "{0:0.07f}".format(dist)
         dist = dist[:-7]
         dist = float(dist)
+        print dist
         FWHM.append(dist)
         
     FWHM = np.array(FWHM)
     FWHM = FWHM*10000
     
+    #plot FWHM probability distribution
     plt.figure()
     mu,sigma = norm.fit(FWHM)
     print mu, sigma
