@@ -1,5 +1,7 @@
 # PHEW (PytHon Equivalent Widths): 
 
+THIS IS MY VERSION NOW.
+
 Python tools to calculate the equivalent width, line depth, and full width at half maximum of a line for a given spectrum using  [PySpecKit](https://github.com/pyspeckit/pyspeckit). By: Munazza Alam
 
 ### Information
