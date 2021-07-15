@@ -5,17 +5,18 @@ import pyspeckit as p
 import matplotlib.pyplot as plt, matplotlib.mlab as mlab
 import numpy as np
 from scipy.stats import norm
+import astropy.io.fits as pf
 from os import path
 import pdb
 
 
-def equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n, fldr=None, name=None):
+def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n, fldr=None, name=None):
     """"
     This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the measure_equivalent_width() function to perform the calculation.
 
     Args:
     ----------
-    filename - String, spectrum file name with full path
+    spec - Numpy Array, List or String; if array or list, it should contain the spectrum with wavelength in Angstrom, flux, and optional flux errors as columns; if string, it should contain the filename with full path of the spectrum file
     xmin,xmax - Integers, the specified interval in wavelength space, which defines the region of interest
     excludemin, excludemax - Integers, the specified interval in wavelength space of the spectral feature, which binds the edges of the spectral feature itself
     n - Integer, the number of times the EqW measurement is repeated in the MCMC step
@@ -29,28 +30,71 @@ def equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n, fldr=Non
     """
 
     # Check that inputs are valid ---------------------------------------------
-    # fldr
+    # Is spec a filename?
+    if isinstance(spec, str):
+        filename = spec
+    else:
+        filename = None
+        # Is spec an array?
+        specarr = None
+        if isinstance(spec, (list, np.ndarray)):
+            specarr = list(spec)
+        else:
+            # spec is neither a filename nor a list with spectrum
+            if filename is None:
+                print('ERROR: spec parameter has the wrong format.')
+                return
+        # Is the array an appropriate one?
+        if len(specarr) not in (2,3):
+            print('ERROR: spec parameter has the wrong format.')
+            return
+    
+    # Is fldr included?
     if fldr is None:
         fldr = './'
     else:
         if not path.exists(fldr):
             fldr = './'
 
+    sp = None
+
+    # Attempt to load spectrum using input filename ---------------------------
+    if filename is not None:
+        sp = readspec(filename)
+        if sp == 1:
+            return
+    
+    # Get spectrum data from input array --------------------------------------
+    # (Note: the empty header pf.Header() is added to avoid a pyspeckit warning message)
+    if sp is None:
+        if len(specarr) < 3:
+            # Only wavelength and flux
+            sp = p.Spectrum(data=specarr[1], xarr=specarr[0], xarrkwargs={'unit':'Angstrom'}, \
+                            header=pf.Header()) 
+        else:
+            # Wavelength, flux, and flux errors
+            sp = p.Spectrum(data=specarr[1], xarr=specarr[0], error=specarr[2], \
+                            xarrkwargs={'unit':'Angstrom'}, header=pf.Header())
+        sp.xarr.xtype = 'wavelength'
+
     # Invoke pyspeckit to perform equivalent width measurement ----------------
-    mu, sigma = measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n)
+    result = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n)
+    if result is None:
+        return
 
     # Save figure -------------------------------------------------------------
     fig = plt.gcf()
     plt.savefig(fldr + name + '_EWfit.pdf')
 
-    return np.array([mu, sigma]) 
+    return result 
 
 
-def measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n):
+def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n):
     """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
     
     Args:
     =======
+    sp - pyspeckit instance of class Spectrum
     xmin,xmax - the specified interval of the spectrum to plot
     excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
     n - the number of Monte Carlo iterations 
@@ -62,10 +106,8 @@ def measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n):
     and the approximated rectangle (green) 
     - a histogram of the EqW distribution
     """
-    sp = p.Spectrum(filename) # This has trouble loading flux error dimension
-    sp.unit = 'Angstrom' 
-    sp.xarr.xtype = 'wavelength'
-    
+ 
+
     # Get an estimate of flux error from noise in continuum
     icont = np.where(((sp.xarr.value >= xmin) & (sp.xarr.value < exclude_min)) |  \
                     ((sp.xarr.value > exclude_max) & (sp.xarr.value <= xmax)))[0]
@@ -101,21 +143,6 @@ def measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n):
                    components=False, annotate=True, 
                    loc='lower left', xmin=None, xmax=None)
 
-    # sp2 = sp.copy()
-    # EQWs = np.zeros(n)
-
-    # for w in range(n):
-    #     sp2.data = sp.data + np.random.randn(sp.data.size)*sp.error
-    #     sp2.baseline(xmin=xmin, xmax=xmax, 
-    #                  exclude=[exclude_min,exclude_max],  
-    #                  subtract=False, highlight_fitregion=False,
-    #                  selectregion=True, order=0)
-    #     sp2.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
-    #     dist = sp2.specfit.EQW(plotcolor='g', fitted=False, 
-    #                            components=False, annotate=True,  
-    #                            loc='lower left', xmin=None, xmax=None)
-
-
     fig = plt.figure()
     mu,sigma = norm.fit(EQWs) 
     print(mu, sigma)
@@ -126,10 +153,10 @@ def measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n):
     ax.plot(bins,y,'r--',linewidth=2)
     ax.grid(True)
     ax.set_ylabel('Probability')
-    ax.set_xlabel('EQW')           
+    ax.set_xlabel('EW')           
     plt.show()
     num_bins = np.floor(np.log10(n)) * 10
-    pdb.set_trace()
+    
     # Light blue histogram for contrast and for R/G colorblind folks
     n,bins,patches = plt.hist(EQWs, int(num_bins), density=True,
                               facecolor='lightblue',  
@@ -144,34 +171,32 @@ def measure_equivalent_width(filename, xmin, xmax, exclude_min, exclude_max, n):
         ax.axvline(p_value,linestyle=":",color="k",lw=1.5)
 
     plt.ylabel('Probability')
-    plt.xlabel('EQW')           
+    plt.xlabel('EW')           
     plt.show()
 
-    return mu, sigma
+    return [mu, sigma]
 
+def readspec(fname):
+    """ Uses pyspeckit to attempt to read fits file of spectrum and load it into an instance of class Spectrum."""
+
+    try:
+        sp = p.Spectrum(fname) # This has trouble loading flux error dimension sometimes
+    except FileNotFoundError:
+        print('ERROR: Spectrum file not found.')
+        return 1
+    except TypeError:
+        print('ERROR: Spectrum file could not be loaded.')
+        return 1
+    
+    sp.xarr.xtype = 'wavelength' 
+    if sp.xarr.unit != 'Angstrom':
+        sp.xarr.convert_to_unit('Angstrom')
+
+    return sp
+
+ 
 if __name__=="__main__":
     # xmin,xmax,exclude_min,exclude_max,n
     equivalent_width('2m1821_61_08jun11.txt',1.250, 1.255, 1.2514, 
                      1.2538, 1000)
                      
-def final_plots(filename,xmin,xmax,exclude_min,exclude_max):
-    vf = p.spectrum.models.inherited_voigtfitter.voigt_fitter()
-    
-    sp = p.Spectrum(filename)
-    sp.xarr.units = 'micron'
-    sp.xarr.xtype = 'wavelength'
-    sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='fill',color='grey')  
-    sp.baseline(xmin=xmin, xmax=xmax,exclude=[exclude_min,exclude_max],subtract=False,
-                reset_selection=False,hightlight_fitregion=False,order=0)
-    sp.specfit(plot=True, fittype='voigt', color='magenta', guesses='moments', 
-               vheight=True)
-    fwhm = sp.specfit.measure_approximate_fwhm(threshold='error', emission=False, 
-                                               interpolate_factor=1024, plot=True, 
-                                               grow_threshold=1, color='magenta')     
-    sp.plotter.refresh()
-    sp.specfit.EQW(plot=True, plotcolor='g', fitted=False, continuum=0.5, components=False, annotate=True, loc='lower left', xmin=None,
-    xmax=None)
-    sp.plotter.refresh()
-    xarr_fit_units = 'microns'
-    plt.ylabel('Normalized Flux')
-    plt.xlabel('Wavelength ($\mu m$)')
