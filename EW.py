@@ -42,11 +42,11 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n, fldr=None, n
         else:
             # spec is neither a filename nor a list with spectrum
             if filename is None:
-                print('ERROR: spec parameter has the wrong format.')
+                print('ERROR: spec parameter has the wrong format.\n')
                 return
         # Is the array an appropriate one?
         if len(specarr) not in (2,3):
-            print('ERROR: spec parameter has the wrong format.')
+            print('ERROR: spec parameter has the wrong format.\n')
             return
     
     # Is fldr included?
@@ -69,13 +69,26 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n, fldr=None, n
     if sp is None:
         if len(specarr) < 3:
             # Only wavelength and flux
-            sp = p.Spectrum(data=specarr[1], xarr=specarr[0], xarrkwargs={'unit':'Angstrom'}, \
-                            header=pf.Header()) 
+            sp = p.Spectrum(data=specarr[1], xarr=specarr[0], \
+                            xarrkwargs={'unit':'Angstrom'}, \
+                            maskdata=True, header=pf.Header()) 
         else:
-            # Wavelength, flux, and flux errors
-            sp = p.Spectrum(data=specarr[1], xarr=specarr[0], error=specarr[2], \
-                            xarrkwargs={'unit':'Angstrom'}, header=pf.Header())
+            if np.isnan(specarr[2]).all():
+                # Only wavelength and flux
+                sp = p.Spectrum(data=specarr[1], xarr=specarr[0], \
+                                xarrkwargs={'unit':'Angstrom'}, \
+                                maskdata=True, header=pf.Header())                 
+            else:
+                # Wavelength, flux, and flux errors
+                sp = p.Spectrum(data=specarr[1], xarr=specarr[0], error=specarr[2], \
+                                xarrkwargs={'unit':'Angstrom'}, \
+                                maskdata=True, header=pf.Header())
         sp.xarr.xtype = 'wavelength'
+    
+    # Mask negative flux values
+    msk = sp.data.data < 0
+    sp.data.mask = sp.data.mask | msk
+
 
     # Invoke pyspeckit to perform equivalent width measurement ----------------
     result = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n)
@@ -180,17 +193,23 @@ def readspec(fname):
     """ Uses pyspeckit to attempt to read fits file of spectrum and load it into an instance of class Spectrum."""
 
     try:
-        sp = p.Spectrum(fname) # This has trouble loading flux error dimension sometimes
+        sp = p.Spectrum(fname, maskdata=True)
     except FileNotFoundError:
-        print('ERROR: Spectrum file not found.')
+        print('ERROR: Spectrum file not found.\n')
         return 1
     except TypeError:
-        print('ERROR: Spectrum file could not be loaded.')
+        print('ERROR: Spectrum file could not be loaded.\n')
         return 1
     
+    # Fix wavelength units
     sp.xarr.xtype = 'wavelength' 
     if sp.xarr.unit != 'Angstrom':
         sp.xarr.convert_to_unit('Angstrom')
+
+    # Warn the user if no flux errors present; p.Spectrum has trouble loading flux errors sometimes
+    ierrs = np.where(sp.error.data != 0)[0]
+    if len(ierrs) == 0:
+        print('WARNING: No flux errors were loaded.\n')
 
     return sp
 
