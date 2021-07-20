@@ -12,7 +12,7 @@ from os import path
 Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
 """
 
-def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=None, name=None, bandloc=6563, speclims=None):
+def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=None, name=None, bandloc=6563, speclims=None, outname=None, clobber=True):
     """"
     This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the measure_equivalent_width() function to perform the calculation.
 
@@ -20,17 +20,19 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     ----------
     spec - Numpy Array, List or String; if array or list, it should contain the spectrum with wavelength in Angstrom, flux, and optional flux errors as columns; if string, it should contain the filename with full path of the spectrum file
     xmin,xmax - Integers, the specified interval in wavelength space, which defines the region of interest
-    excludemin, excludemax - Integers, the specified interval in wavelength space of the spectral feature, which binds the edges of the spectral feature itself
+    excludemin, excludemax - Integers, the specified interval in wavelength space of the spectral feature, which binds the edges of the spectral feature itself; the pseudo-continuum will be defined using the spectral ranges (xmin,exclude_min) and (exclude_max, xmax)
     n - Integer, the number of times the EqW measurement is repeated in the MCMC routine
     fldr - String, location where output figure is desired; if None, figure is saved in current folder
     name - String, if not None, it uses it to label the object
     bandloc - Float or Integer, the central location of the spectral line in Angstrom
     speclims - Numpy Array or List, the minimum and maximum wavelength values in Angstrom to be plotted; the fitting routine ignores this input
+    outname - String, specifies the output figure filename, if user wants something different from the default name convention used here (i.e., name + _EWfit)
+    clobber - Boolean, whether to overwrite existing figure file
 
     Returns:
     -------
-    - The mean and standard deviation of the distribution of n equivalent width measurements; if the MCMC routine is not run, then only the preliminary equivalent width measured is returned
-    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and one with a histogram from the MCMC results
+    - A list with the mean and standard deviation of the distribution of n equivalent width measurements; if the MCMC routine is not run, then only the preliminary equivalent width measured is returned as a float
+    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and if the MCM routine is run, one additional panel with a histogram from the MCMC results
     """
 
     # Define some constants ---------------------------------------------------
@@ -55,11 +57,11 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
         else:
             # spec is neither a filename nor an array with spectrum
             if filename is None:
-                print('ERROR: spec parameter has the wrong format.\n')
+                print('ERROR: spec parameter has the wrong format.')
                 return
         # Is the array an appropriate one?
         if len(specarr) not in (2,3):
-            print('ERROR: spec parameter has the wrong format.\n')
+            print('ERROR: spec parameter has the wrong format.')
             return
     
     # Are xmin, xmax, exclude_min, exclude_max reasonable?
@@ -71,7 +73,10 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     if fldr is None:
         fldr = './'
     else:
+        if fldr[-1] !='/':
+            fldr = fldr + '/'
         if not path.exists(fldr):
+            print('WARNING: fldr parameter invalid. Output figure will be saved in currenty directory.')
             fldr = './'
     
     # Is name provided?
@@ -83,11 +88,28 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     # Are speclims in the right format?
     if speclims is not None:
         if not isinstance(speclims, (list, np.ndarray)):
-            print('ERROR: speclims parameter has the wrong format.\n')
+            print('ERROR: speclims parameter has the wrong format.')
             return
         elif len(speclims) != 2:
-            print('ERROR: speclims parameter has the wrong format.\n')
+            print('ERROR: speclims parameter has the wrong format.')
             return
+    
+    # is bandloc reasonable?
+    if isinstance(bandloc, (list, np.ndarray, str)):
+        print('ERROR: bandloc parameter has the wrong format.')
+        return
+    if bandloc < xmin or bandloc > xmax:
+        print('ERROR: bandloc parameter is outside the range of interest (xmin, xmax).')
+        return
+
+    # Is outname reasonable?
+    if outname is not None and not isinstance(outname, str):
+        print('ERROR: outname parameter should be a string.')
+        return
+    if outname is None:
+        fname = objname
+    else:
+        fname = outname
 
     # Attempt to load spectrum using input filename ---------------------------
     sp = None
@@ -120,17 +142,7 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     msk = sp.flux.data < 0
     sp.flux.mask = sp.flux.mask | msk
 
-    # Set up figure -----------------------------------------------------------
-    plt.close()
-    plt.rc('font', size=7)
-    plt.ion()
-    fig = plt.figure(1, figsize=(3.30709*1.3,3.30709*1.6))
-    ax1 = fig.add_subplot(311) # TOP PANEL To plot the full spectrum
-    ax2 = fig.add_subplot(312) # MID PANEL To plot the fit
-    ax3 = fig.add_subplot(313) # BOTTOM PANEL To plot the histogram
-    plt.subplots_adjust(hspace=0.3, top=0.97, bottom=0.06, right=0.97, left=0.12)
-    
-    # Plot full spectrum (TOP PANEL) ------------------------------------------
+    # Normalize spectrum and determine relevant ranges ------------------------
     if speclims is None:
         tmpmin = sp.xarr.value[1]
         tmpmax = sp.xarr.value[-2]
@@ -145,14 +157,44 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
             tmpmax = sp.xarr.value[-2]
             tmpwarning = True
         if tmpwarning:
-            print('WARNING: Spectrum limits provided are beyond the range of the spectrum.\n')
+            print('WARNING: Spectrum limits provided are beyond the range of the spectrum.')
+    # Define the range to be plotted in the top panel
     irange = np.where((sp.xarr.value >= tmpmin) & (sp.xarr.value <= tmpmax))[0]
-    ax1.plot(sp.xarr.value[irange], sp.flux.data[irange], drawstyle='steps-mid', linewidth=0.8, color='k')
-    # Beautify full spectrum plot
+    
+    # Determine if spectral line to be measured is within the wavelength range of the spectrum
+    if xmin < sp.xarr.value[0] or xmax > sp.xarr.value[-1]:
+        print('ERROR: spectral line to be measured is beyond the range of the spectrum.')
+        return
+
+    # Normalize spectrum by the flux at the spectral line location
+    inorm = np.where(sp.xarr.value >= bandloc)[0][0]
+    normval = sp.flux.data[inorm]
+    fluxnorm = np.ma.core.MaskedArray(data=sp.flux.data / normval * 10,
+                                      mask=sp.flux.mask, fill_value=sp.flux.fill_value)
+    sp.flux = fluxnorm
+    if np.sum(sp.error) != 0:
+        efluxnorm = np.ma.core.MaskedArray(data=sp.error.data / normval * 10,
+                                           mask=sp.error.mask, fill_value=sp.error.fill_value)  
+        sp.error = efluxnorm
+
+    # Set up figure -----------------------------------------------------------
+    plt.close()
+    plt.rc('font', size=7)
+    plt.ion()
+    fig = plt.figure(1, figsize=(3.30709*1.3,3.30709*1.6))
+    ax1 = fig.add_subplot(311) # TOP PANEL To plot the full spectrum
+    ax2 = fig.add_subplot(312) # MID PANEL To plot the fit
+    ax3 = fig.add_subplot(313) # BOTTOM PANEL To plot the histogram
+    plt.subplots_adjust(hspace=0.3, top=0.97, bottom=0.06, right=0.97, left=0.1)
+    ax3.set_visible(False)
+
+    # Plot full spectrum (TOP PANEL) ------------------------------------------
+    ax1.plot(sp.xarr.value[irange], sp.flux.data[irange], drawstyle='steps-mid', \
+             linewidth=0.8, color='k')
     ax1.set_xlim(xmin=tmpmin, xmax=tmpmax)
     ax1.set_title(objname, y=0.97)
     ax1.set_xlabel(r'Wavelength $(\AA)$', labelpad=0)
-    ax1.set_ylabel('Flux', labelpad=-1)
+    ax1.set_ylabel('Normalized Flux', labelpad=-1)
     ax1.axvline(x=bandloc, linestyle=':', color=GRAY, linewidth=0.8)
 
     # Check the validity of xmin, xmax, exclude_min, exclude_max
@@ -165,16 +207,15 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     resultprel = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, \
                                           bandloc, fig=fig, ax=ax2)
     if resultprel is None:
+        print('ERROR: Pyspeckit could not fit the spectral feature.')
         return
 
     # Perform MCM routine to calculate EW and e_EW ----------------------------
     plt.show()
     tmpCommand = input('Continue with MCMC step? ([y]/n) ')
     if tmpCommand.upper() == 'N':
-        # Eliminate the bottom panel
-        ax3.set_visible(False)
-        plt.savefig(fldr + objname + '_EWfit.pdf')
-        return resultprel
+        savefig(fldr, fname, clobber)
+        return ax2
 
     sp2 = sp.copy()
     EQWs = np.zeros(n)
@@ -206,6 +247,7 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     perc = np.percentile(EQWs, percentiles)
     
     # Plot histogram (BOTTOM PANEL)
+    ax3.set_visible(True)
     nums,bins,ptchs = ax3.hist(EQWs, 10, density=True, facecolor=GREEN, histtype='stepfilled')
     y = norm.pdf(bins, mu, sigma)
     ax3.plot(bins, y, color=ORANGE, linestyle='--', linewidth=2)    
@@ -228,7 +270,7 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
     ax2.get_children()[7].set_visible(False)
 
     # Save figure -------------------------------------------------------------
-    plt.savefig(fldr + objname + '_EWfit.pdf')
+    savefig(fldr, fname, clobber)
 
     return result
 
@@ -253,13 +295,6 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, bandlo
     and the approximated rectangle (green) 
     - a histogram of the EqW distribution
     """
- 
-
-    # Get an estimate of flux error from noise in continuum
-    # icont = np.where(((sp.xarr.value >= xmin) & (sp.xarr.value < exclude_min)) |  \
-    #                 ((sp.xarr.value > exclude_max) & (sp.xarr.value <= xmax)))[0]
-    # tmpcont = sp.flux[icont]
-    # tmperr = np.std(tmpcont)
     
     # Set up plotter (when required) and fit baseline
     if ax is None:
@@ -275,27 +310,33 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, bandlo
 
     # Fit Voigt profile to spectral feature
     if ax is None:
-        sp.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
-        ew = sp.specfit.EQW(fitted=True, xmin=None, xmax=None)
+        # (Ignore a numpy divide-by-zero error coming from within Pyspeckit)
+        with np.errstate(divide='ignore'):
+            sp.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
+            ew = sp.specfit.EQW(fitted=True, xmin=None, xmax=None)
     else:
-        sp.specfit(fittype='voigt', color=BLUE, guesses='moments')
-        ew = sp.specfit.EQW(plot=True, plotcolor=GREEN, fitted=True, xmin=None, xmax=None)
+        # (Ignore a numpy divide-by-zero error coming from within Pyspeckit)
+        with np.errstate(divide='ignore'):
+            sp.specfit(fittype='voigt', color=BLUE, guesses='moments')
+            ew = sp.specfit.EQW(plot=True, plotcolor=GREEN, fitted=True, xmin=None, xmax=None)
 
         # Annotate results into figure
-        sp.specfit.annotate(loc='lower left', fontsize=6, frameon=True)
+        sp.specfit.annotate(loc='upper right', fontsize=6, frameon=True)
         txt = 'EW = ' + format(ew,'.2f') + r' $\AA$'
-        ax.text(0.995,0.02, txt, transform=ax.transAxes, fontsize=6, ha='right')
+        ax.text(0.995, 0.02, txt, transform=ax.transAxes, fontsize=6, ha='right')
 
         # Beautify plot
         sp.plotter.axis.set_xlabel(r'Wavelength $(\AA)$', labelpad=0)
-        sp.plotter.axis.set_ylabel('Flux', labelpad=-1)
+        sp.plotter.axis.set_ylabel('Normalized Flux', labelpad=-1)
         sp.plotter.axis.axvline(x=exclude_min, linestyle=':', color=GRAY, linewidth=0.8)
         sp.plotter.axis.axvline(x=exclude_max, linestyle=':', color=GRAY, linewidth=0.8)
-        # We don't want the fit parameters box to block the bottom edge of exclude_* indicators:
-        sp.specfit.fitleg.set_bbox_to_anchor((0,0.03), transform=ax.transAxes)
-        lgd = ax.get_legend()
-        plt.setp(lgd.get_frame(), color=L_GRAY)
-        sp.specfit.fitleg.set_alpha(0.3)
+        # Put box around baseline fit description
+        ax.artists[0].set_frame_on(True)
+        plt.setp(ax.artists[0].get_frame(), color=L_GRAY)
+        # Put box around spectral fit description
+        plt.setp(ax.artists[1].get_frame(), color=L_GRAY)
+        ax.artists[1].set_alpha = 0.1        
+        sp.specfit.fitleg.set_bbox_to_anchor((1,1), transform=ax.transAxes) # This line does nothing if it's (1,1). We leave it here in case we want to move the box around...
         
         fig.canvas.draw() # This refreshes the figure so that everything shows
     
@@ -307,10 +348,10 @@ def readspec(fname):
     try:
         sp = p.Spectrum(fname, maskdata=True)
     except FileNotFoundError:
-        print('ERROR: Spectrum file not found.\n')
+        print('ERROR: Spectrum file not found.')
         return 1
     except TypeError:
-        print('ERROR: Spectrum file could not be loaded.\n')
+        print('ERROR: Spectrum file could not be loaded.')
         return 1
     
     # Fix some parameters
@@ -322,13 +363,27 @@ def readspec(fname):
     # Warn the user if no flux errors present; p.Spectrum has trouble loading flux errors sometimes
     ierrs = np.where(sp.error.data != 0)[0]
     if len(ierrs) == 0:
-        print('WARNING: No flux errors were loaded.\n')
+        print('WARNING: No flux errors were loaded.')
 
     return sp
 
- 
-if __name__=="__main__":
-    # xmin,xmax,exclude_min,exclude_max,n
-    equivalent_width('2m1821_61_08jun11.txt',1.250, 1.255, 1.2514, 
-                     1.2538, 1000)
+
+def savefig(fldr, fname, clobber):
+    """ Saves output figure. Determines output filename to avoid over-writing, if requested."""
+
+    if clobber:
+        plt.savefig(fldr + fname + '_EWfit.pdf')
+    else:
+        exists = True
+        cntnum = 0
+        while exists:
+            if cntnum == 0:
+                cnt = ''
+            else:
+                cnt = '_' + str(cntnum)
+            exists = path.exists(fldr + fname + '_EWfit' + cnt + '.pdf')
+            if exists:
+                cntnum = cntnum + 1
+        plt.savefig(fldr + fname + '_EWfit' + cnt + '.pdf')
+    return
                      
