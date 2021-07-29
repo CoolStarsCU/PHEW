@@ -12,37 +12,39 @@ from os import path
 Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
 """
 
-def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=None, name=None, bandloc=6563, speclims=None, outname=None, clobber=True):
+def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=True, n=1000, fldr=None, name=None, speclims=None, outname=None, blorder=1, interactive=True, clobber=True):
     """"
     This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the measure_equivalent_width() function to perform the calculation.
 
     Args:
     ----------
     spec - Numpy Array, List or String; if array or list, it should contain the spectrum with wavelength in Angstrom, flux, and optional flux errors as columns; if string, it should contain the filename with full path of the spectrum file
+    bandloc - Float or Integer, the central location of the spectral line in Angstrom
     xmin,xmax - Integers, the specified interval in wavelength space, which defines the region of interest
     excludemin, excludemax - Integers, the specified interval in wavelength space of the spectral feature, which binds the edges of the spectral feature itself; the pseudo-continuum will be defined using the spectral ranges (xmin,exclude_min) and (exclude_max, xmax)
-    n - Integer, the number of times the EqW measurement is repeated in the MCMC routine
+    mcmc - Boolean, whether to perform the MCMC iteration to estimate EW uncertainty; this parameter is relevant only in non-interactive mode (interactive=False)
+    n - Integer, the number of times the EW measurement is repeated in the MCMC iteration
     fldr - String, location where output figure is desired; if None, figure is saved in current folder
     name - String, if not None, it uses it to label the object
-    bandloc - Float or Integer, the central location of the spectral line in Angstrom
     speclims - Numpy Array or List, the minimum and maximum wavelength values in Angstrom to be plotted; the fitting routine ignores this input
     outname - String, specifies the output figure filename, if user wants something different from the default name convention used here (i.e., name + _EWfit)
+    blorder - Integer, the order of the polynomial for fitting the pseudo-continuum
+    interactive - Boolean, whether to ask the user to confirm performing the MCMC iteration; if True, the mcmc parameter is overridden by the user interactively
     clobber - Boolean, whether to overwrite existing figure file
 
     Returns:
     -------
-    - A list with the mean and standard deviation of the distribution of n equivalent width measurements; if the MCMC routine is not run, then only the preliminary equivalent width measured is returned as a float
-    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and if the MCM routine is run, one additional panel with a histogram from the MCMC results
+    - A list with the EW and its error e_EW, adopted from the mean and standard deviation of the distribution of n equivalent width measurements; if the MCMC iteration is not run, then only the preliminary equivalent width measured is returned as a float
+    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and if the MCMC routine is run, one additional panel with a histogram from the MCMC results
     """
 
     # Define some constants ---------------------------------------------------
-    global L_GRAY, GRAY, BLUE, GREEN, ORANGE, BLORDER
+    global L_GRAY, GRAY, BLUE, GREEN, ORANGE
     L_GRAY = '#f2f2f2'
     GRAY = '#999999'
     BLUE = '#2166ac'
     GREEN = '#006633'
     ORANGE = '#FF9933'
-    BLORDER = 1 # order for baseline fitting 
 
     # Check that inputs are valid ---------------------------------------------
     # Is spec a filename?
@@ -60,14 +62,38 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
                 print('ERROR: spec parameter has the wrong format.')
                 return
         # Is the array an appropriate one?
+        # (there is probably a more elegant way to check the acceptable array shape and size)
         if len(specarr) not in (2,3):
+            print('ERROR: spec parameter has the wrong format.')
+            return
+        if len(specarr[0]) < 10:
             print('ERROR: spec parameter has the wrong format.')
             return
     
     # Are xmin, xmax, exclude_min, exclude_max reasonable?
     if xmin > xmax or exclude_min > exclude_max or xmin > exclude_min or xmax < exclude_max:
-        print('ERROR: region of interest and/or edges of spectral line are incorrect.')
+        print('ERROR: region of interest and/or edges of spectral line are not appropriate.')
         return
+
+    # is bandloc reasonable?
+    if isinstance(bandloc, (list, np.ndarray, str)):
+        print('ERROR: bandloc parameter has the wrong format.')
+        return
+    if bandloc < xmin or bandloc > xmax:
+        print('ERROR: bandloc parameter is outside the region of interest (xmin, xmax).')
+        return
+    
+    # Is mcmc Boolean?
+    if not isinstance(mcmc, bool):
+        print('ERROR: mcmc parameter must be a boolean.')
+        return
+    
+    # Is n a number?
+    if not isinstance(n, (int, float)):
+        print('ERROR: n parameter must be an integer.')
+        return
+    n = int(n)
+    # We are NOT checking whether n is too small.
 
     # Is fldr included?
     if fldr is None:
@@ -93,14 +119,6 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
         elif len(speclims) != 2:
             print('ERROR: speclims parameter has the wrong format.')
             return
-    
-    # is bandloc reasonable?
-    if isinstance(bandloc, (list, np.ndarray, str)):
-        print('ERROR: bandloc parameter has the wrong format.')
-        return
-    if bandloc < xmin or bandloc > xmax:
-        print('ERROR: bandloc parameter is outside the range of interest (xmin, xmax).')
-        return
 
     # Is outname reasonable?
     if outname is not None and not isinstance(outname, str):
@@ -110,6 +128,17 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
         fname = objname
     else:
         fname = outname
+
+    # Is blorder reasonable?
+    if not isinstance(blorder, (int, float)):
+        print('ERROR: blorder parameter should be an integer number.')
+        return
+    blorder = int(blorder)
+
+    # Is interactive Boolean?
+    if not isinstance(interactive, bool):
+        print('ERROR: interactive parameter must be a boolean.')
+        return
 
     # Attempt to load spectrum using input filename ---------------------------
     sp = None
@@ -204,108 +233,123 @@ def equivalent_width(spec, xmin, xmax, exclude_min, exclude_max, n=1000, fldr=No
 
     # Invoke pyspeckit to plot fit (MID PANEL) --------------------------------
     # (Note: the EW result here is only preliminary and is only provided to the user if they choose not to execute the next step )
-    resultprel = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, \
-                                          bandloc, fig=fig, ax=ax2)
+    resultprel = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, \
+                                          ax=ax2)
     if resultprel is None:
         print('ERROR: Pyspeckit could not fit the spectral feature.')
         return
 
-    # Perform MCM routine to calculate EW and e_EW ----------------------------
-    plt.show()
-    tmpCommand = input('Continue with MCMC step? ([y]/n) ')
-    if tmpCommand.upper() == 'N':
+    # Determine whether the MCMC iteration should be run ----------------------
+    if interactive:
+        # In interative mode, ask the user if the MCMC iteration should be run
+        fig.canvas.draw() # This refreshes the figure so that everything drawn so far shows
+        plt.show()
+        tmpCommand = None
+        while tmpCommand not in ('y', 'n', ''):
+            tmpCommand = input('Continue with MCMC step? ([y]/n) ')
+            if tmpCommand == 'n':
+                fig.text(0.5, 0.18, '(MCMC iteration skipped)', ha='center', fontstyle='italic')
+                savefig(fldr, fname, clobber)
+                plt.close()
+                return resultprel
+            elif tmpCommand == '' or tmpCommand == 'y':
+                mcmc = True
+    else:
+        # In non-interactive mode, use the mcmc parameter to determine whether to run the MCMC iteration 
+        if not mcmc:
+            fig.text(0.5, 0.18, '(MCMC iteration skipped)', ha='center', fontstyle='italic')
+            savefig(fldr, fname, clobber)
+            plt.close()
+            return resultprel
+
+    # Perform MCMC iteration to calculate EW and e_EW -------------------------
+    if mcmc:
+        sp2 = sp.copy()
+        EQWs = np.zeros(n)
+        print('Begin MCMC iterations...')
+        for w in range(n):
+            if w % 100 == 0 or w == n - 1:
+                print(w, end='  ', flush=True)
+            # Determine how to add noise to spectrum
+            if np.sum(sp.error) == 0:
+                # If spectrum has no flux uncertainties, then get noise from noise in continuum
+                icont = np.where(((sp.xarr.value >= xmin) & (sp.xarr.value < exclude_min)) |  \
+                                ((sp.xarr.value > exclude_max) & (sp.xarr.value <= xmax)))[0]
+                tmpcont = sp.data[icont]
+                tmperr = np.std(tmpcont)
+            else:
+                # Otherwise, get noise from flux uncertainties
+                tmperr = sp.error
+            # Generate a new version of the flux array by adding random noise
+            sp2.data = sp.data + np.random.randn(sp.data.size) * tmperr
+
+            # Invoke pyspeckit to do equivalent width measurement
+            mcmcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
+                                                  blorder)
+            EQWs[w] = mcmcresult
+
+        # Calculate stats of MCMC results
+        mu, sigma = norm.fit(EQWs)
+        result = [mu, sigma]
+        percentiles = [16, 50, 84]
+        perc = np.percentile(EQWs, percentiles)
+        
+        # Plot histogram (BOTTOM PANEL)
+        ax3.set_visible(True)
+        nums,bins,ptchs = ax3.hist(EQWs, 10, density=True, facecolor=GREEN, histtype='stepfilled')
+        y = norm.pdf(bins, mu, sigma)
+        ax3.plot(bins, y, color=ORANGE, linestyle='--', linewidth=2)    
+        
+        for ip,p_value in enumerate(perc):
+            ax3.axvline(p_value, linestyle=':', color='k', linewidth=1.5)
+            perctxt = ' ' + str(percentiles[ip]) + r'$^{th}$'
+            # We want the x coords to be data coords, and the y coords to span 0-1 in axes coords:
+            trans = ax3.get_xaxis_transform()
+            ax3.text(p_value, 0.01, perctxt, fontsize=6, transform=trans)
+        
+        # Beautify histogram plot
+        ax3.set_ylabel('PDF')
+        ax3.set_xlabel(r'EW ($\AA$)', labelpad=0)
+        resulttxt = 'EW = ' + format(mu,'.3f') + r' $\pm$ ' + format(sigma,'.3f')
+        ax3.text(0.02,0.9, resulttxt, transform=ax3.transAxes, fontsize=7, \
+                bbox=dict(facecolor=L_GRAY, ec='none', pad=0.3, boxstyle='round'))
+        
+        # Eliminate the preliminary EW result from mid panel
+        ax2.get_children()[7].set_visible(False)
+
+        # Save figure -------------------------------------------------------------
         savefig(fldr, fname, clobber)
-        return ax2
+        plt.close()
 
-    sp2 = sp.copy()
-    EQWs = np.zeros(n)
-    print('Begin MCMC iterations...')
-    for w in range(n):
-        if w % 100 == 0 or w == n - 1:
-            print(w, end='  ', flush=True)
-        # Determine how to add noise to spectrum
-        if np.sum(sp.error) == 0:
-            # If spectrum has no flux uncertainties, then get noise from noise in continuum
-            icont = np.where(((sp.xarr.value >= xmin) & (sp.xarr.value < exclude_min)) |  \
-                            ((sp.xarr.value > exclude_max) & (sp.xarr.value <= xmax)))[0]
-            tmpcont = sp.data[icont]
-            tmperr = np.std(tmpcont)
-        else:
-            # Otherwise, get noise from flux uncertainties
-            tmperr = sp.error
-        # Generate a new version of the flux array by adding random noise
-        sp2.data = sp.data + np.random.randn(sp.data.size) * tmperr
-
-        # Invoke pyspeckit to do equivalent width measurement
-        mcmcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, n, bandloc)
-        EQWs[w] = mcmcresult
-
-    # Calculate stats of MCMC results
-    mu, sigma = norm.fit(EQWs)
-    result = [mu, sigma]
-    percentiles = [16, 50, 84]
-    perc = np.percentile(EQWs, percentiles)
-    
-    # Plot histogram (BOTTOM PANEL)
-    ax3.set_visible(True)
-    nums,bins,ptchs = ax3.hist(EQWs, 10, density=True, facecolor=GREEN, histtype='stepfilled')
-    y = norm.pdf(bins, mu, sigma)
-    ax3.plot(bins, y, color=ORANGE, linestyle='--', linewidth=2)    
-    
-    for ip,p_value in enumerate(perc):
-        ax3.axvline(p_value, linestyle=':', color='k', linewidth=1.5)
-        perctxt = ' ' + str(percentiles[ip]) + r'$^{th}$'
-        # We want the x coords to be data coords, and the y coords to span 0-1 in axes coords:
-        trans = ax3.get_xaxis_transform()
-        ax3.text(p_value, 0.01, perctxt, fontsize=6, transform=trans)
-    
-    # Beautify histogram plot
-    ax3.set_ylabel('PDF')
-    ax3.set_xlabel(r'EW ($\AA$)', labelpad=0)
-    resulttxt = 'EW = ' + format(mu,'.3f') + r' $\pm$ ' + format(sigma,'.3f')
-    ax3.text(0.02,0.9, resulttxt, transform=ax3.transAxes, fontsize=7, \
-             bbox=dict(facecolor=L_GRAY, ec='none', pad=0.3, boxstyle='round'))
-    
-    # Eliminate the preliminary EW result from mid panel
-    ax2.get_children()[7].set_visible(False)
-
-    # Save figure -------------------------------------------------------------
-    savefig(fldr, fname, clobber)
-
-    return result
+        return result
 
 
-def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, bandloc, fig=None, ax=None):
-    """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit. By: Munazza Alam
+def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, ax=None):
+    """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
     
     Args:
-    =======
+    ----------
     sp - pyspeckit instance of class Spectrum
     xmin,xmax - the specified interval of the spectrum to plot
-    excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature 
-    n - the number of Monte Carlo iterations
-    bandloc - Integer or Float, wavelength location in Angstrom of the spectral feature
-    fig - Matplotlib pyplot figure containing the axis where fit will be drawn
-    ax - Matplotlib pyplot axis where the fit will be drawn; if None, function assumes that it is being invoked by MCMC step
+    excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature
+    blorder - Integer, the order of the polynomial used to fit the pseudo-continuum
+    ax - Matplotlib pyplot axis where the fit will be drawn; if None, function assumes that it is being invoked by MCMC iteration step
 
     Returns:
-    =======
-    - the mean and standard deviation of the equivalent width measured n times
-    - the spectrum plotted with the Voigt profile line fit (blue), the pseudo-continuum (yellow), 
-    and the approximated rectangle (green) 
-    - a histogram of the EqW distribution
+    ----------
+    - The equivalent width measurement as a float
     """
     
     # Set up plotter (when required) and fit baseline
     if ax is None:
         sp.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], \
-                    subtract=False, reset_selection=False, order=BLORDER)
+                    subtract=False, reset_selection=False, order=blorder)
     else:
         sp.plotter(axis=ax, clear=False, xmin=xmin, xmax=xmax, ymin=0, errstyle='bars', \
                    color=GRAY)
         sp.baseline(xmin=xmin, xmax=xmax, exclude=[exclude_min,exclude_max], \
                     subtract=False, highlight_fitregion=False, reset_selection=False, \
-                    selectregion=True, order=BLORDER)
+                    selectregion=True, order=blorder)
         sp.baseline.annotate(loc='upper left', fontsize=6)
 
     # Fit Voigt profile to spectral feature
@@ -337,9 +381,7 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, n, bandlo
         plt.setp(ax.artists[1].get_frame(), color=L_GRAY)
         ax.artists[1].set_alpha = 0.1        
         sp.specfit.fitleg.set_bbox_to_anchor((1,1), transform=ax.transAxes) # This line does nothing if it's (1,1). We leave it here in case we want to move the box around...
-        
-        fig.canvas.draw() # This refreshes the figure so that everything shows
-    
+            
     return ew
 
 def readspec(fname):
