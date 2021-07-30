@@ -7,6 +7,7 @@ import numpy as np
 from scipy.stats import norm
 import astropy.io.fits as pf
 from os import path
+import pdb
 
 """
 Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
@@ -232,9 +233,9 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
         return
 
     # Invoke pyspeckit to plot fit (MID PANEL) --------------------------------
-    # (Note: the EW result here is only preliminary and is only provided to the user if they choose not to execute the next step )
-    resultprel = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, \
-                                          ax=ax2)
+    # (Note: the EW result here is only preliminary and is only provided to the user if they choose not to execute the next step)
+    resultprel, guesses = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, \
+                                                   blorder, ax=ax2)
     if resultprel is None:
         print('ERROR: Pyspeckit could not fit the spectral feature.')
         return
@@ -284,8 +285,9 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
             sp2.data = sp.data + np.random.randn(sp.data.size) * tmperr
 
             # Invoke pyspeckit to do equivalent width measurement
+
             mcmcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
-                                                  blorder)
+                                                  blorder, guesses)
             EQWs[w] = mcmcresult
 
         # Calculate stats of MCMC results
@@ -324,7 +326,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
         return result
 
 
-def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, ax=None):
+def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, guesses=None, ax=None):
     """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
     
     Args:
@@ -333,7 +335,8 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, 
     xmin,xmax - the specified interval of the spectrum to plot
     excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature
     blorder - Integer, the order of the polynomial used to fit the pseudo-continuum
-    ax - Matplotlib pyplot axis where the fit will be drawn; if None, function assumes that it is being invoked by MCMC iteration step
+    guesses - List, the parameter guesses for the Voigt profile to be fitted; it is only used when the function is invoked by the MCMC iteration
+    ax - Matplotlib pyplot axis where the fit will be drawn; if None, it is assumed that function is being invoked by the MCMC iteration
 
     Returns:
     ----------
@@ -354,11 +357,17 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, 
 
     # Fit Voigt profile to spectral feature
     if ax is None:
+        # Do the fit, but don't plot anything
+        # Use the parameter values from the preliminary fit to guess the parameters here
         # (Ignore a numpy divide-by-zero error coming from within Pyspeckit)
         with np.errstate(divide='ignore'):
-            sp.specfit(fittype='voigt', guesses=sp.specfit.parinfo.values)
+            sp.specfit(fittype='voigt', guesses=guesses)
             ew = sp.specfit.EQW(fitted=True, xmin=None, xmax=None)
+
+            return ew
     else:
+        # Do the fit and plot it
+        # Use the moments to guess the parameters
         # (Ignore a numpy divide-by-zero error coming from within Pyspeckit)
         with np.errstate(divide='ignore'):
             sp.specfit(fittype='voigt', color=BLUE, guesses='moments')
@@ -381,8 +390,9 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, 
         plt.setp(ax.artists[1].get_frame(), color=L_GRAY)
         ax.artists[1].set_alpha = 0.1        
         sp.specfit.fitleg.set_bbox_to_anchor((1,1), transform=ax.transAxes) # This line does nothing if it's (1,1). We leave it here in case we want to move the box around...
-            
-    return ew
+        
+        # In addition to the EW result, return the Voigt fit parameters from this preliminary fit, so that they can be used as guesses in the MCMC iteration
+        return ew, sp.specfit.parinfo.values
 
 def readspec(fname):
     """ Uses pyspeckit to attempt to read fits file of spectrum and load it into an instance of class Spectrum."""
