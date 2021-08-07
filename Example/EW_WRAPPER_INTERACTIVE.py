@@ -16,7 +16,7 @@ import EW as ew
 
 def fit_runner(path):
     '''
-    (Created By Stanislav DeLaurentiis, 2020)
+    (Created By Stanislav DeLaurentiis, 2021)
     
     Will run through all the fits files in the inputted directory and
     apply EW.equivalent_width (with mcmc=False and interactive=False) to each file, ensuring that
@@ -29,7 +29,7 @@ def fit_runner(path):
     Parameters
     ----------
     path : string
-        The absolute path of the directory that contains the deisred fits files and is ok'd to be drained.
+        The absolute path of the directory that contains the deisred fits files.
 
     Returns
     -------
@@ -213,12 +213,11 @@ def mcmc_run(path):
     ----------
     path : string
         The absolute path of the directory containing all fits files.
-    steps : int
-        How many steps each MCMC routine runs through (recommended=1000).
 
     Returns
     -------
-    None.
+    data1: dict
+        A dictionary containing the spec name, and corresponding ew, and ew error.
     
     Outputs
     -------
