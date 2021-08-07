@@ -7,13 +7,12 @@ Created on Wed Aug  4 17:14:05 2021
 """
 
 import EW as ew
-import numpy as np
-import matplotlib.pyplot as plt
 import csv
 import os
-import antools3 as at
+import readspec as rs
 
-path='/Users/stanislavdelaurentiis/Desktop/TEST_PHEW/'
+# Edit this path as needed
+path='/Users/stanislavdelaurentiis/PHEW/Example/TEST_PHEW_LITE/'
 
 spec_count=0
 determined=[]
@@ -37,7 +36,7 @@ while spec_count>0:
             continue
         specname=spec.split('.')[0]
         try:
-            specinfo=at.read_spec(path+spec)[0]
+            specinfo=rs.read_spec(path+spec)
             ew.equivalent_width(specinfo, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=False, interactive=False, name=specname)
         except(AttributeError, ValueError):
             print(str(specname)+' is a FAULTED SPECTRUM')
