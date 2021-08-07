@@ -6,7 +6,7 @@ Created on Wed Aug  4 11:37:13 2021
 @author: stanislavdelaurentiis
 """
 
-import antools3 as at
+import readspec as rs
 import csv
 import os
 import subprocess
@@ -19,11 +19,11 @@ def fit_runner(path):
     (Created By Stanislav DeLaurentiis, 2020)
     
     Will run through all the fits files in the inputted directory and
-    apply antools.equivalent_width (with errors=False) to each file, ensuring that
+    apply EW.equivalent_width (with mcmc=False and interactive=False) to each file, ensuring that
     the curve is fit well to the spectral feature.
     Will then organize each fits file and its output pdf figure into a directory
     correlating with its parameters, while recording specname, paramters, and 
-    type in 'EQW_FITS.csv. 
+    type in EQW_FITS.csv. 
     
 
     Parameters
@@ -74,7 +74,7 @@ def fit_runner(path):
                 print('\n')
                 specname=spec.split('.')[0]
                 try:
-                    specinfo=at.read_spec(path+"/"+spec)[0] #reading the fits file into array
+                    specinfo=rs.read_spec(path+"/"+spec) #reading the fits file into array
                     ew.equivalent_width(specinfo, bandloc, xmin, xmax, excludemin, excludemax, name=specname, fldr=path, mcmc=False, interactive=False)
                 except(AttributeError, ValueError):
                     print('ERROR: Unable to read this spectrum.')
@@ -206,12 +206,9 @@ def mcmc_run(path):
     '''
     (Created By Stanislav DeLaurentiis 2020)
     
-    An automated loop that applies the MCMC routine to all fits files
-    that had accurate fits.
-    Writes a csv file contianing the eqw values from the routine.
+    An automated loop that applies the MCMC routine using EW.equivalent_width (with mcmc=True and interactive=False) to all fits files that had accurate fits.
+    Writes a csv file containing the eqw values from the routine.
     
-    (Needs to be used with antools2.py)
-
     Parameters
     ----------
     path : string
@@ -262,7 +259,7 @@ def mcmc_run(path):
             xmax=specparams[specname][2]
             excludemin=specparams[specname][3]
             excludemax=specparams[specname][4]
-            specinfo=at.read_spec(path+'/'+specname+'.fits')[0]
+            specinfo=rs.read_spec(path+'/'+specname+'.fits')
             histdata=ew.equivalent_width(specinfo, bandloc, xmin, xmax, excludemin, excludemax, name=specname, mcmc=True, interactive=False, clobber=True,fldr=path, n=10)
             eqwmu=float(histdata[0])
             eqwsig=float(histdata[1])
