@@ -2,7 +2,8 @@
 # encoding: utf-8
 
 import pyspeckit as p
-import matplotlib.pyplot as plt, matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 import numpy as np
 from scipy.stats import norm
 from astropy import log
@@ -36,7 +37,7 @@ def measure_line_depth(filename,xmin,xmax,exclude_min,exclude_max,n):
     F_zero = sp.baseline.baselinepars
     line_depth = 1 - F_lambda/F_zero
     line_depth = np.float(line_depth) 
-    print line_depth   
+    print(line_depth) 
         
     sp2 = sp.copy()
     depth = []
@@ -57,15 +58,18 @@ def measure_line_depth(filename,xmin,xmax,exclude_min,exclude_max,n):
 
     plt.figure()
     mu,sigma = norm.fit(depth)
-    print mu, sigma
+    print(mu, sigma)
 
     n,bins,patches = plt.hist(depth,10,normed=True,facecolor='lightblue')
-    y = mlab.normpdf(bins,mu,sigma)
+    y = norm.pdf(bins,mu,sigma)
     plt.plot(bins,y,'r--',linewidth=2)
     plt.grid(True)
     plt.ylabel('Probability')
     plt.xlabel('Line Depth')
     plt.show()
+
     
-if __name__=="__main__":
-    xmin,xmax,exclude_min,exclude_max,n
+    
+    
+    
+    
