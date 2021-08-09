@@ -30,7 +30,7 @@ def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
     
     #read & plot in spectrum 
     sp = p.Spectrum(filename)
-    sp.xarr.units = 'micron'
+    #sp.xarr.units = 'micron'
     sp.xarr.xtype = 'wavelength'
     sp.plotter(xmin=xmin, xmax=xmax, ymin=0, errstyle='bars',color='grey')  
     
@@ -43,7 +43,7 @@ def measure_fwhm(filename,xmin,xmax,exclude_min,exclude_max,n):
                vheight=True)
 
     #measure FWHM
-    fwhm = sp.specfit.measure_approximate_fwhm( threshold='error', emission=False, interpolate_factor=1024, plot=True, grow_threshold=1)
+    fwhm = sp.specfit.measure_approximate_fwhm( threshold='error', emission=True, interpolate_factor=1024, plot=True, grow_threshold=1)
     sp.plotter.refresh()
     fwhm = "{0:0.06f}".format(fwhm)
     fwhm = fwhm[:-7]
