@@ -41,7 +41,7 @@ def fit_runner(path):
 
     '''
     
-    f=open('EQW_FITS.csv', 'w')
+    f=open(path+'/EQW_FITS.csv', 'w')
     writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
     writer.writeheader()
     f.close()
@@ -78,7 +78,7 @@ def fit_runner(path):
                     ew.equivalent_width(specinfo, bandloc, xmin, xmax, excludemin, excludemax, name=specname, fldr=path, mcmc=False, interactive=False)
                 except(AttributeError, ValueError):
                     print('ERROR: Unable to read this spectrum.')
-                    f=open('EQW_FITS.csv', 'a')
+                    f=open(path+'/EQW_FITS.csv', 'a')
                     writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                     writer.writerow({'SPEC':specname, 'BANDLOC':'', 'XMIN':'', 'XMAX':'', 'EXCLUDEMIN':'', 'EXCLUDEMAX':'', 'TYPE':'UNABLE TO READ', 'COMMENTS':''})
                     f.close()
@@ -94,7 +94,7 @@ def fit_runner(path):
                     print('File Saved.')
                     print('PARAMS: '+str([xmin, xmax, excludemin, excludemax]))
                     comment=input('Any comments? [Press enter if none]\n')
-                    f=open('EQW_FITS.csv', 'a')
+                    f=open(path+'/EQW_FITS.csv', 'a')
                     writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                     writer.writerow({'SPEC':specname, 'BANDLOC':bandloc, 'XMIN':xmin, 'XMAX':xmax, 'EXCLUDEMIN':excludemin, 'EXCLUDEMAX':excludemax, 'TYPE':'FITTED', 'COMMENTS':comment})
                     f.close()
@@ -113,7 +113,7 @@ def fit_runner(path):
                     if zero_yn=='y':
                         print('This spectrum will now be filed as having ZERO ew')
                         comment=input('Any comments? [Press enter if none]\n')
-                        f=open('EQW_FITS.csv', 'a')
+                        f=open(path+'/EQW_FITS.csv', 'a')
                         writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                         writer.writerow({'SPEC':specname, 'BANDLOC':'', 'XMIN':'', 'XMAX':'', 'EXCLUDEMIN':'', 'EXCLUDEMAX':'', 'TYPE':'ZERO', 'COMMENTS':comment})
                         f.close()
@@ -128,7 +128,7 @@ def fit_runner(path):
                         if hope_yn=='n':
                             print('This spectrum will be filed as undetermined')
                             comment=input('Any comments? [Press enter if none]\n')
-                            f=open('EQW_FITS.csv', 'a')
+                            f=open(path+'/EQW_FITS.csv', 'a')
                             writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                             writer.writerow({'SPEC':specname, 'BANDLOC':'', 'XMIN':'', 'XMAX':'', 'EXCLUDEMIN':'', 'EXCLUDEMAX':'', 'TYPE':'UNDETERMINED', 'COMMENTS':comment})
                             f.close()
@@ -157,7 +157,7 @@ def fit_runner(path):
                     print('File Saved.')
                     print('PARAMS: '+str([small_xmin, small_xmax, small_excludemin, small_excludemax]))
                     comment=input('Any comments? [Press enter if none]\n')
-                    f=open('EQW_FITS.csv', 'a')
+                    f=open(path+'/EQW_FITS.csv', 'a')
                     writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                     writer.writerow({'SPEC':specname, 'BANDLOC':bandloc, 'XMIN':small_xmin, 'XMAX':small_xmax, 'EXCLUDEMIN':small_excludemin, 'EXCLUDEMAX':small_excludemax, 'TYPE':'FITTED', 'COMMENTS':comment})
                     f.close()
@@ -174,7 +174,7 @@ def fit_runner(path):
                     if zero_yn=='y':
                         print('This spectrum will now be filed as having ZERO ew')
                         comment=input('Any comments? [Press enter if none]\n')
-                        f=open('EQW_FITS.csv', 'a')
+                        f=open(path+'/EQW_FITS.csv', 'a')
                         writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                         writer.writerow({'SPEC':specname, 'BANDLOC':'', 'XMIN':'', 'XMAX':'', 'EXCLUDEMIN':'', 'EXCLUDEMAX':'', 'TYPE':'ZERO', 'COMMENTS':comment})
                         f.close()
@@ -189,7 +189,7 @@ def fit_runner(path):
                         if hope_yn=='n':
                             print('This spectrum will be filed as undetermined')
                             comment=input('Any comments? [Press enter if none]\n')
-                            f=open('EQW_FITS.csv', 'a')
+                            f=open(path+'/EQW_FITS.csv', 'a')
                             writer=csv.DictWriter(f, fieldnames=['SPEC', 'BANDLOC', 'XMIN', 'XMAX', 'EXCLUDEMIN', 'EXCLUDEMAX', 'TYPE', 'COMMENTS'])
                             writer.writerow({'SPEC':specname, 'BANDLOC':'', 'XMIN':'', 'XMAX':'', 'EXCLUDEMIN':'', 'EXCLUDEMAX':'', 'TYPE':'UNDETERMINED', 'COMMENTS':comment})
                             f.close()
@@ -227,14 +227,14 @@ def mcmc_run(path):
     data1={}
     data0={}
 
-    f=open('EQW_VALS_ALL.csv', 'w')
+    f=open(path+'/EQW_VALS_ALL.csv', 'w')
     writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
     writer.writeheader()
     f.close()
     
     specparams={}
     
-    f=open('EQW_FITS.csv', 'rU')
+    f=open(path+'/EQW_FITS.csv', 'rU')
     reader=csv.DictReader(f)
     for line in reader:
         specname=line['SPEC']
@@ -265,7 +265,7 @@ def mcmc_run(path):
             print('\n')
             print('EQW: '+str(eqwmu)+', EQW_SIG: '+str(eqwsig))
             print('\n')
-            f=open('EQW_VALS_ALL.csv', 'a')
+            f=open(path+'/EQW_VALS_ALL.csv', 'a')
             writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
             writer.writerow({'SPECNAME':specname, 'EQW_MU':eqwmu, 'EQW_SIG':eqwsig})
             f.close()
@@ -275,7 +275,7 @@ def mcmc_run(path):
         spec=line
         eqwmu=float(data0[line][0])
         eqwsig=float(data0[line][1])
-        f=open('EQW_VALS_ALL.csv', 'a')
+        f=open(path+'/EQW_VALS_ALL.csv', 'a')
         writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
         writer.writerow({'SPECNAME':spec, 'EQW_MU':eqwmu, 'EQW_SIG':eqwsig})
         f.close()
