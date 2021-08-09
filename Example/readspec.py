@@ -2,7 +2,7 @@ import numpy as np
 from astropy.io import ascii
 import astropy.io.fits as pf
 
-def read_spec(specFiles, errors=True, negtonan=False, linear=False, verbose=True, header=False):
+def read_spec(specFiles, errors=True, negtonan=False, linear=False, ext=0, verbose=True, header=False):
     '''
     (by Alejandro N |uacute| |ntilde| ez, Jocelyn Ferrara)
 
@@ -18,6 +18,8 @@ def read_spec(specFiles, errors=True, negtonan=False, linear=False, verbose=True
       Boolean, whether to set negative flux values equal to zero.
     *linear*
       Boolean, whether to return spectrum only if it is linear. If it cannot verify linearity, it will assume linearity.
+    *ext*
+      Integer, the extension number of the fits file where the spectrum is.
     *verbose*
       Boolean, whether to print warning messages.
     *header*
@@ -42,44 +44,49 @@ def read_spec(specFiles, errors=True, negtonan=False, linear=False, verbose=True
         if spFile is None: continue
         # 3.1 Determine the type of file it is
         isFits = False
-        ext = spFile[-4:].lower()
-        if ext == 'fits' or ext == '.fit':
+        extension = spFile[-4:].lower()
+        if extension == 'fits' or extension == '.fit':
             isFits = True
         
         # 3.2. Get data from file
         if isFits:
             isSDSS = False
-            isLAMOST = False
-            try:
-                # Determine table index to extract the data
-                tmpHead = pf.getheader(spFile, ext=0)
-                
-                # Telescope exceptions
-                try:
-                    tmptelescope = tmpHead['TELESCOP'].upper()
-                except KeyError:
-                    tmptelescope = ''
-                if tmptelescope.find('SDSS') != -1:
-                    isSDSS = True
-                    tmpext = 1
-                if tmptelescope.find('LAMOST') != -1:
-                    isLAMOST = True
-                
-                if not isSDSS:
-                    if tmpHead['NAXIS'] == 0:
-                        try:
-                            if tmpHead['NAXIS1'] < 100:
-                                tmpext = 2
-                            else:
-                                tmpext = 1
-                        except KeyError:
-                            tmpext = 1
-                    else:
-                        tmpext = 0
+            isHARPS = False
+            # Determine table index to extract the data
+            if ext != 0:
+                tmpext = ext
                 fitsData = pf.getdata(spFile, ext=tmpext)
-            except IOError:
-                print('ERROR: Could not open ' + str(spFile) + '.')
-                continue
+            elif ext == 0:
+                # Even if specified by user, try to determine the relevant extension
+                try:
+                    tmpHead = pf.getheader(spFile, ext=0)
+                    
+                    # Telescope exceptions
+                    try:
+                        tmptelescope = tmpHead['TELESCOP'].upper()
+                    except KeyError:
+                        tmptelescope = ''
+                    if tmptelescope.find('SDSS') != -1:
+                        isSDSS = True
+                        tmpext = 1
+                    if tmptelescope.find('LAMOST') != -1:
+                        isLAMOST = True
+                    
+                    if not isSDSS:
+                        if tmpHead['NAXIS'] == 0:
+                            try:
+                                if tmpHead['NAXIS1'] < 100:
+                                    tmpext = 2
+                                else:
+                                    tmpext = 1
+                            except KeyError:
+                                tmpext = 1
+                        else:
+                            tmpext = 0
+                    fitsData = pf.getdata(spFile, ext=tmpext)
+                except IOError:
+                    print('Could not open ' + str(spFile) + '.')
+                    continue
             # Re-shape SDSS data array to make it compatible with the rest of this code
             if isSDSS:
                 fitsData = np.array(fitsData.tolist()).T
@@ -90,6 +97,15 @@ def read_spec(specFiles, errors=True, negtonan=False, linear=False, verbose=True
                 fitsHeader = pf.getheader(spFile, ext=0) 
             else:
                 fitsHeader = tmpHead.copy()
+
+            # Determine if spectrum is from ESO Observatory
+            try:
+                tmpHead = pf.getheader(spFile, ext=0)
+                tmpfind = tmpHead['TELESCOP'].find('ESO')
+            except KeyError:
+                tmpfind = -1
+            if tmpfind != -1:
+                isHARPS = True
 
         # Assume ascii file otherwise
         else:
@@ -124,7 +140,8 @@ def read_spec(specFiles, errors=True, negtonan=False, linear=False, verbose=True
         # 3.4. Get wl, flux & error data from fits file
         #      (returns wl in pos. 0, flux in pos. 1, error values in pos. 2)
         if isFits:
-            specData[spFileIdx] = __get_spec(fitsData, fitsHeader, spFile, errors, verb=verbose)
+            specData[spFileIdx] = __get_spec(fitsData, fitsHeader, spFile, errors, \
+                                             isHARPS=isHARPS, verb=verbose)
             if specData[spFileIdx] is None:
                 continue
 
@@ -200,7 +217,7 @@ def __create_waxis(fitsHeader, lenData, fileName, verb=True):
 
     return wAxis
 
-def __get_spec(fitsData, fitsHeader, fileName, errorVals, verb=True):
+def __get_spec(fitsData, fitsHeader, fileName, errorVals, isHARPS, verb=True):
     # Interprets spectral data from fits file.
     # Returns wavelength (wl) data in pos. 0, flux data in pos. 1, and if requested, error values in pos. 2.
     
@@ -208,6 +225,11 @@ def __get_spec(fitsData, fitsHeader, fileName, errorVals, verb=True):
         validData = [None] * 3
     else:
         validData = [None] * 2
+
+    # Fetch spectral data from ESO spectra
+    if isHARPS:
+        validData = [fitsData['WAVE'][0], fitsData['FLUX'][0], fitsData['ERR'][0]]
+        return validData
 
     # Identify number of data sets in fits file
     dimNum = len(fitsData)
@@ -267,14 +289,21 @@ def __get_spec(fitsData, fitsHeader, fileName, errorVals, verb=True):
         fluxIdx = -1
         if np.isscalar(fitsData[0]):
             fluxIdx = -1
-        elif len(fitsData[0]) == 2:
+        elif len(fitsData[0]) in range(2,4):
         # Data comes in a xxxx by 2 matrix (ascii origin)
             tmpWave = []
             tmpFlux = []
+            if len(fitsData[0]) == 3:
+                tmpeFlux = []
             for pair in fitsData:
                 tmpWave.append(pair[0])
                 tmpFlux.append(pair[1])
-            fitsData = [tmpWave,tmpFlux]
+                if len(fitsData[0]) == 3:
+                    tmpeFlux.append(pair[2])
+            if len(fitsData[0]) == 3:
+                fitsData = [tmpWave, tmpFlux, tmpeFlux]
+            else:
+                fitsData = [tmpWave,tmpFlux]
             fitsData = np.array(fitsData)
 
             waveIdx = 0
