@@ -13,7 +13,7 @@ This folder provides two example methods to use PHEW when measuring the equivale
 ## SAMPLE DATA ##
 
 * __TEST_PHEW_LITE__ 
- * This folder contains simple sample spectra that work well to show the capabilities of *__EW_AUTOMATED_LITE__*
+  * This folder contains simple sample spectra that work well to show the capabilities of *__EW_AUTOMATED_LITE__*
 
 * __TEST_PHEW_SAMP__ 
- * This folder contains a more diverse set of sample spectra that show off the capabilities of *__EW_AUTOMATED_INTERACTIVE__*
+  * This folder contains a more diverse set of sample spectra that show off the capabilities of *__EW_AUTOMATED_INTERACTIVE__*
