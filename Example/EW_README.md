@@ -1,4 +1,4 @@
-##**EW Wrapper Documentation**##
+##EW Wrapper Documentation##
 
 *Description*
 The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that’s purpose is to efficiently fit and get equivalent width measurements for a large quantity of spectrum. The code operates on the fact that many spectra can be properly fitted under highly similar parameters. Thus, the code fits spectra in rounds. In each round the code applies a fixed set of parameters for all unfit spectra in the directory, and removes those that were fit properly, leaving the rest to be fit under the new parameters fixed in the next round.
