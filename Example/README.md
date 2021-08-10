@@ -10,6 +10,9 @@ This folder provides two example methods to use PHEW when measuring the equivale
 * __EW_AUTOMATED_INTERACTIVE__
   * This is a highly interactive wrapper that contains much of the needed functionality to efficiently and methodically measure equivalent widths for a large quantitiy of spectra. Further documentation can be found in "EW_README.md"
 
+* __readspec__
+  * This code is a sample spectra reader that needs to be downloaded to execute the above codes. Depending on the kind of spectrum being fit, a number of these kinds of codes can be used, this is simply the one which works for our spectra.
+
 ## SAMPLE DATA ##
 
 * __TEST_PHEW_LITE__ 
