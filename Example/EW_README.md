@@ -9,9 +9,9 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 
 *Outputs*
 
-* '<EQW_FITS.csv>'
+* EQW_FITS.csv
   * Contains the parameters used (or not used) for all spectrum files in the inputted directory. Also contains ‘types’, identifying whether a spectrum could not be read, was deemed to be flat, or remained undetermined.
-* <EQW_VALS.csv>
+* EQW_VALS.csv
   * Contains all spectra files in the inputted directory with their equivalent width value and error.
 
 *__Running the Code__*
