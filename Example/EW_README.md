@@ -1,20 +1,19 @@
 ## EW Wrapper Documentation ##
 
-*Description*
 The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that’s purpose is to efficiently fit and get equivalent width measurements for a large quantity of spectrum. The code operates on the fact that many spectra can be properly fitted under highly similar parameters. Thus, the code fits spectra in rounds. In each round the code applies a fixed set of parameters for all unfit spectra in the directory, and removes those that were fit properly, leaving the rest to be fit under the new parameters fixed in the next round.
 
-*Setup Steps*
+## Setup Steps ##
 * Download the readspec.py file included in the example folder
 * Download desired .fits files (A sample set is included in “TEST_PHEW_SAMP”)
 
-*Outputs*
+## Outputs ##
 
 * EQW_FITS.csv
   * Contains the parameters used (or not used) for all spectrum files in the inputted directory. Also contains ‘types’, identifying whether a spectrum could not be read, was deemed to be flat, or remained undetermined.
 * EQW_VALS.csv
   * Contains all spectra files in the inputted directory with their equivalent width value and error.
 
-*__Running the Code__*
+## Running the Code ##
 
 *ALL PATHS ARE ABSOLUTE PATHS (eg /Users/stanislavdelaurentiis/desktop/spectra)*
 
