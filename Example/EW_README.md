@@ -15,7 +15,7 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 
 ## Running the Code ##
 
-*__ALL PATHS ARE ABSOLUTE PATHS (eg /Users/stanislavdelaurentiis/desktop/spectra)__*
+*__All paths are absolute paths (eg /Users/stanislavdelaurentiis/desktop/spectra)__*
 
 **fit_runner(_path_)**
 * Your input “path” here will be the directory containing the spectra.
@@ -34,11 +34,11 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 
 **mcmc_run(_path_)**
 
-*This function is fully automatic*
+*__This function is fully automatic__*
 
-1. The inputted directory is the same as before.
-2. The program will then run through all the spectra that were fit with an emission, absorption, or labeled as having zero equivalent width, and apply an MCMC routine of 1000 steps to get a precise equivalent width and error.
-3. The code will then output the according pdf figures into the directory with the spectra, as well as recording the ew values in the “EQW_VALS_ALL.csv” file.
+* The inputted directory is the same as before.
+* The program will then run through all the spectra that were fit with an emission, absorption, or labeled as having zero equivalent width, and apply an MCMC routine of 1000 steps to get a precise equivalent width and error.
+* The code will then output the according pdf figures into the directory with the spectra, as well as recording the ew values in the “EQW_VALS_ALL.csv” file.
 
 
 
