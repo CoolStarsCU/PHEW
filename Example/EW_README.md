@@ -15,7 +15,7 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 
 ## Running the Code ##
 
-*ALL PATHS ARE ABSOLUTE PATHS (eg /Users/stanislavdelaurentiis/desktop/spectra)*
+*__ALL PATHS ARE ABSOLUTE PATHS (eg /Users/stanislavdelaurentiis/desktop/spectra)__*
 
 **fit_runner(_path_)**
 * Your input “path” here will be the directory containing the spectra.
