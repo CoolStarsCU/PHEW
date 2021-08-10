@@ -17,7 +17,7 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 
 *__All paths are absolute paths (eg /Users/stanislavdelaurentiis/desktop/spectra)__*
 
-**fit_runner(_path_)**
+## fit_runner(_path_) ##
 * Your input “path” here will be the directory containing the spectra.
 * The code will prompt you to enter in general parameters that would be used to fit a curve to the spectral feature you are looking for. These general parameters will then be applied to every unfit spectra file in the directory during that round.
 * You will then be prompted to make a series of decisions about the quality of the fit. If you are happy with the fit, the program will record the parameters you selected for this spectrum, save the output pdf figure into the same directory, ask for comments, and then show you the next file.
@@ -32,7 +32,7 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 * The program will then continue doing this for each spectrum for each pass through the loop, until there are no spectra left undecided in the directory you inputted. 
 * In the original directory with the spectra you will find that there is an ‘EQW_FITS.csv’ file that has recorded each spectrum and its parameters.
 
-**mcmc_run(_path_)**
+## mcmc_run(_path_) ##
 
 *__This function is fully automatic__*
 
