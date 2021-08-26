@@ -15,7 +15,7 @@ Calculate the equivalent width of an absorption or emission line for a given spe
 
 def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=True, n=1000, fldr=None, name=None, speclims=None, outname=None, blorder=1, interactive=True, clobber=True):
     """"
-    This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the measure_equivalent_width() function to perform the calculation.
+    This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the __measure_equivalent_width() function to perform the calculation.
 
     Args:
     ----------
@@ -234,7 +234,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
 
     # Invoke pyspeckit to plot fit (MID PANEL) --------------------------------
     # (Note: the EW result here is only preliminary and is only provided to the user if they choose not to execute the next step)
-    resultprel, guesses = measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, \
+    resultprel, guesses = __measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, \
                                                    blorder, ax=ax2)
     if resultprel is None:
         print('ERROR: Pyspeckit could not fit the spectral feature.')
@@ -250,7 +250,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
             tmpCommand = input('Continue with MC step? ([y]/n) ')
             if tmpCommand == 'n':
                 fig.text(0.5, 0.18, '(MC iteration skipped)', ha='center', fontstyle='italic')
-                savefig(fldr, fname, clobber)
+                __savefig(fldr, fname, clobber)
                 plt.close()
                 return resultprel
             elif tmpCommand == '' or tmpCommand == 'y':
@@ -259,7 +259,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
         # In non-interactive mode, use the mc parameter to determine whether to run the MC iteration 
         if not mc:
             fig.text(0.5, 0.18, '(mc iteration skipped)', ha='center', fontstyle='italic')
-            savefig(fldr, fname, clobber)
+            __savefig(fldr, fname, clobber)
             plt.close()
             return resultprel
 
@@ -286,7 +286,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
 
             # Invoke pyspeckit to do equivalent width measurement
 
-            mcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
+            mcresult = __measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
                                                   blorder, guesses)
             EQWs[w] = mcresult
 
@@ -320,13 +320,13 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
         ax2.get_children()[7].set_visible(False)
 
         # Save figure -------------------------------------------------------------
-        savefig(fldr, fname, clobber)
+        __savefig(fldr, fname, clobber)
         plt.close()
 
         return result
 
 
-def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, guesses=None, ax=None):
+def __measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, guesses=None, ax=None):
     """Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
     
     Args:
@@ -420,7 +420,7 @@ def readspec(fname):
     return sp
 
 
-def savefig(fldr, fname, clobber):
+def __savefig(fldr, fname, clobber):
     """ Saves output figure. Determines output filename to avoid over-writing, if requested."""
 
     if clobber:
