@@ -13,7 +13,7 @@ import pdb
 Calculate the equivalent width of an absorption or emission line for a given spectrum using PySpecKit.
 """
 
-def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=True, n=1000, fldr=None, name=None, speclims=None, outname=None, blorder=1, interactive=True, clobber=True):
+def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=True, n=1000, fldr=None, name=None, speclims=None, outname=None, blorder=1, interactive=True, clobber=True):
     """"
     This is the main function to be invoked by the user. This function gathers the spectrum and metadata, sets up the output PDF figure, and calls the measure_equivalent_width() function to perform the calculation.
 
@@ -23,20 +23,20 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
     bandloc - Float or Integer, the central location of the spectral line in Angstrom
     xmin,xmax - Integers, the specified interval in wavelength space, which defines the region of interest
     excludemin, excludemax - Integers, the specified interval in wavelength space of the spectral feature, which binds the edges of the spectral feature itself; the pseudo-continuum will be defined using the spectral ranges (xmin,exclude_min) and (exclude_max, xmax)
-    mcmc - Boolean, whether to perform the MCMC iteration to estimate EW uncertainty; this parameter is relevant only in non-interactive mode (interactive=False)
-    n - Integer, the number of times the EW measurement is repeated in the MCMC iteration
+    mc - Boolean, whether to perform the MC iteration to estimate EW uncertainty; this parameter is relevant only in non-interactive mode (interactive=False)
+    n - Integer, the number of times the EW measurement is repeated in the MC iteration
     fldr - String, location where output figure is desired; if None, figure is saved in current folder
     name - String, if not None, it uses it to label the object
     speclims - Numpy Array or List, the minimum and maximum wavelength values in Angstrom to be plotted; the fitting routine ignores this input
     outname - String, specifies the output figure filename, if user wants something different from the default name convention used here (i.e., name + _EWfit)
     blorder - Integer, the order of the polynomial for fitting the pseudo-continuum
-    interactive - Boolean, whether to ask the user to confirm performing the MCMC iteration; if True, the mcmc parameter is overridden by the user interactively
+    interactive - Boolean, whether to ask the user to confirm performing the MC iteration; if True, the mc parameter is overridden by the user interactively
     clobber - Boolean, whether to overwrite existing figure file
 
     Returns:
     -------
-    - A list with the EW and its error e_EW, adopted from the mean and standard deviation of the distribution of n equivalent width measurements; if the MCMC iteration is not run, then only the preliminary equivalent width measured is returned as a float
-    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and if the MCMC routine is run, one additional panel with a histogram from the MCMC results
+    - A list with the EW and its error e_EW, adopted from the mean and standard deviation of the distribution of n equivalent width measurements; if the MC iteration is not run, then only the preliminary equivalent width measured is returned as a float
+    - A figure with three panels: one with the full spectrum, one with the fit to the spectral line, and if the MC routine is run, one additional panel with a histogram from the MC results
     """
 
     # Define some constants ---------------------------------------------------
@@ -84,9 +84,9 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
         print('ERROR: bandloc parameter is outside the region of interest (xmin, xmax).')
         return
     
-    # Is mcmc Boolean?
-    if not isinstance(mcmc, bool):
-        print('ERROR: mcmc parameter must be a boolean.')
+    # Is mc Boolean?
+    if not isinstance(mc, bool):
+        print('ERROR: mc parameter must be a boolean.')
         return
     
     # Is n a number?
@@ -240,34 +240,34 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
         print('ERROR: Pyspeckit could not fit the spectral feature.')
         return
 
-    # Determine whether the MCMC iteration should be run ----------------------
+    # Determine whether the MC iteration should be run ----------------------
     if interactive:
-        # In interative mode, ask the user if the MCMC iteration should be run
+        # In interative mode, ask the user if the MC iteration should be run
         fig.canvas.draw() # This refreshes the figure so that everything drawn so far shows
         plt.show()
         tmpCommand = None
         while tmpCommand not in ('y', 'n', ''):
-            tmpCommand = input('Continue with MCMC step? ([y]/n) ')
+            tmpCommand = input('Continue with MC step? ([y]/n) ')
             if tmpCommand == 'n':
-                fig.text(0.5, 0.18, '(MCMC iteration skipped)', ha='center', fontstyle='italic')
+                fig.text(0.5, 0.18, '(MC iteration skipped)', ha='center', fontstyle='italic')
                 savefig(fldr, fname, clobber)
                 plt.close()
                 return resultprel
             elif tmpCommand == '' or tmpCommand == 'y':
-                mcmc = True
+                mc = True
     else:
-        # In non-interactive mode, use the mcmc parameter to determine whether to run the MCMC iteration 
-        if not mcmc:
-            fig.text(0.5, 0.18, '(MCMC iteration skipped)', ha='center', fontstyle='italic')
+        # In non-interactive mode, use the mc parameter to determine whether to run the MC iteration 
+        if not mc:
+            fig.text(0.5, 0.18, '(mc iteration skipped)', ha='center', fontstyle='italic')
             savefig(fldr, fname, clobber)
             plt.close()
             return resultprel
 
-    # Perform MCMC iteration to calculate EW and e_EW -------------------------
-    if mcmc:
+    # Perform MC iteration to calculate EW and e_EW -------------------------
+    if mc:
         sp2 = sp.copy()
         EQWs = np.zeros(n)
-        print('Begin MCMC iterations...')
+        print('Begin MC iterations...')
         for w in range(n):
             if w % 100 == 0 or w == n - 1:
                 print(w, end='  ', flush=True)
@@ -286,11 +286,11 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=T
 
             # Invoke pyspeckit to do equivalent width measurement
 
-            mcmcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
+            mcresult = measure_equivalent_width(sp2, xmin, xmax, exclude_min, exclude_max, \
                                                   blorder, guesses)
-            EQWs[w] = mcmcresult
+            EQWs[w] = mcresult
 
-        # Calculate stats of MCMC results
+        # Calculate stats of MC results
         mu, sigma = norm.fit(EQWs)
         result = [mu, sigma]
         percentiles = [16, 50, 84]
@@ -335,8 +335,8 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, 
     xmin,xmax - the specified interval of the spectrum to plot
     excludemin, excludemax - the specified interval (in wavelength space) of the absorption feature
     blorder - Integer, the order of the polynomial used to fit the pseudo-continuum
-    guesses - List, the parameter guesses for the Voigt profile to be fitted; it is only used when the function is invoked by the MCMC iteration
-    ax - Matplotlib pyplot axis where the fit will be drawn; if None, it is assumed that function is being invoked by the MCMC iteration
+    guesses - List, the parameter guesses for the Voigt profile to be fitted; it is only used when the function is invoked by the MC iteration
+    ax - Matplotlib pyplot axis where the fit will be drawn; if None, it is assumed that function is being invoked by the MC iteration
 
     Returns:
     ----------
@@ -391,7 +391,7 @@ def measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder, 
         ax.artists[1].set_alpha = 0.1        
         sp.specfit.fitleg.set_bbox_to_anchor((1,1), transform=ax.transAxes) # This line does nothing if it's (1,1). We leave it here in case we want to move the box around...
         
-        # In addition to the EW result, return the Voigt fit parameters from this preliminary fit, so that they can be used as guesses in the MCMC iteration
+        # In addition to the EW result, return the Voigt fit parameters from this preliminary fit, so that they can be used as guesses in the MC iteration
         return ew, sp.specfit.parinfo.values
 
 def readspec(fname):
