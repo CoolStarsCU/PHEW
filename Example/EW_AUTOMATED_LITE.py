@@ -14,7 +14,7 @@ import os
 import readspec as rs
 import subprocess
 
-path='/Users/stanislavdelaurentiis/Desktop/TEST_PHEW/'
+path='/Users/stanislavdelaurentiis/Example/TEST_PHEW_LITE/'
 
 spec_count=0
 determined=[]
