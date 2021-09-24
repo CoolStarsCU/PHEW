@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import os
-import antools3 as at
+import readspec as rs
 import subprocess
 
 path='/Users/stanislavdelaurentiis/Desktop/TEST_PHEW/'
@@ -38,7 +38,7 @@ while spec_count>0:
             continue
         specname=spec.split('.')[0]
         try:
-            specinfo=at.read_spec(path+spec)[0]
+            specinfo=rs.read_spec(path+spec)
             ew.equivalent_width(specinfo, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=False, interactive=False, name=specname)
             subprocess.call(['open', specname+'_EWfit.pdf'])
         except(AttributeError, ValueError):
