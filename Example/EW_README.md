@@ -3,11 +3,11 @@
 The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that’s purpose is to efficiently fit and get equivalent width measurements for a large quantity of spectrum. The code operates on the fact that many spectra can be properly fitted under highly similar parameters. Thus, the code fits spectra in rounds. In each round the code applies a fixed set of parameters for all unfit spectra in the directory, and removes those that were fit properly, leaving the rest to be fit under the new parameters fixed in the next round.
 
 ## Setup Steps ##
-* Download the readspec.py file included in the example folder
-* Download desired .fits files (A sample set is included in “TEST_PHEW_SAMP”)
-* Download "EW_WRAPPER_AUTOMATED.py"
-* Open a new script in the same directory and import "EW_WRAPPER_AUTOMATED.py" as a package, from which the functions (below) "fit_runner" and "mcmc_run" can be called
-* Once the functions are called and proper path arguments are provided, the new (user-created) script can be executed via the command line or in the user's IDE of choice
+* Download the readspec.py file included in the example folder.
+* Download desired .fits files (A sample set is included in “TEST_PHEW_SAMP”).
+* Download "EW_WRAPPER_AUTOMATED.py".
+* Open a new script in the same directory and import "EW_WRAPPER_AUTOMATED.py" as a package, from which the functions (below) "fit_runner" and "mcmc_run" can be called.
+* Once the functions are called and proper path arguments are provided, the new (user-created) script can be executed via the command line or in the user's IDE of choice.
 
 ## Outputs ##
 
