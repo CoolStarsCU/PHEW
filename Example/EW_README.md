@@ -6,7 +6,8 @@ The code “EW_WRAPPER_AUTOMATED.py” is an example of an automated code that�
 * Download the readspec.py file included in the example folder
 * Download desired .fits files (A sample set is included in “TEST_PHEW_SAMP”)
 * Download "EW_WRAPPER_AUTOMATED.py"
-* Open a new script in the same directory and import "EW_WRAPPER_AUTOMATED.py" as a package, from which the functions (below) fit_runner and mcmc_run can be called.
+* Open a new script in the same directory and import "EW_WRAPPER_AUTOMATED.py" as a package, from which the functions (below) "fit_runner" and "mcmc_run" can be called
+* Once the functions are called and proper path arguments are provided, the new (user-created) script can be executed via the command line or in the user's IDE of choice
 
 ## Outputs ##
 
