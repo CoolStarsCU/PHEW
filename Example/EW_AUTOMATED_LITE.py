@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug  4 17:14:05 2021
-
 @author: stanislavdelaurentiis
 """
 
@@ -12,7 +11,9 @@ import os
 import readspec as rs
 
 # Edit this path as needed
-path='/Users/stanislavdelaurentiis/PHEW/Example/TEST_PHEW_LITE/'
+path='/Users/alejo/PHEW/Example/TEST_PHEW_LITE/'
+if not os.path.exists(path):
+    os.sys.exit('WARNING: Please edit the *path* object in this script before running it.')
 
 spec_count=0
 determined=[]
@@ -37,7 +38,7 @@ while spec_count>0:
         specname=spec.split('.')[0]
         try:
             specinfo=rs.read_spec(path+spec)
-            ew.equivalent_width(specinfo, bandloc, xmin, xmax, exclude_min, exclude_max, mcmc=False, interactive=False, name=specname)
+            ew.equivalent_width(specinfo, bandloc, xmin, xmax, exclude_min, exclude_max, mc=False, interactive=False, name=specname)
         except(AttributeError, ValueError):
             print(str(specname)+' is a FAULTED SPECTRUM')
             spec_count=spec_count-1
@@ -61,8 +62,6 @@ writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
 writer.writeheader()
 f.close()
     
-
-
 specparams={}
     
 f=open('EQW_FITS.csv', 'rU')
@@ -78,15 +77,13 @@ for line in reader:
 
 f.close()
 
-
-
 for specname in specparams:
     bandloc=specparams[specname][0]
     xmin=specparams[specname][1]
     xmax=specparams[specname][2]
     excludemin=specparams[specname][3]
     excludemax=specparams[specname][4]
-    histdata=ew.equivalent_width(path+'/'+specname+'.fits', bandloc, xmin, xmax, excludemin, excludemax, name=specname, mcmc=True, interactive=False, clobber=True)
+    histdata=ew.equivalent_width(path+'/'+specname+'.fits', bandloc, xmin, xmax, excludemin, excludemax, name=specname, mc=True, interactive=False, clobber=True)
     eqwmu=float(histdata[0])
     eqwsig=float(histdata[1])
     print('EQW: '+str(eqwmu)+', EQW_SIG: '+str(eqwsig))
@@ -94,15 +91,4 @@ for specname in specparams:
     writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
     writer.writerow({'SPECNAME':specname, 'EQW_MU':eqwmu, 'EQW_SIG':eqwsig})
     f.close()
-
-
-
-
-
-
-
-
-
-
-
-            
+   

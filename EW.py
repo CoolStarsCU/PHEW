@@ -144,7 +144,7 @@ def equivalent_width(spec, bandloc, xmin, xmax, exclude_min, exclude_max, mc=Tru
     # Attempt to load spectrum using input filename ---------------------------
     sp = None
     if filename is not None:
-        sp = readspec(filename)
+        sp = __readspecwithpyspeckit(filename)
         if sp == 1:
             return
     
@@ -394,7 +394,7 @@ def __measure_equivalent_width(sp, xmin, xmax, exclude_min, exclude_max, blorder
         # In addition to the EW result, return the Voigt fit parameters from this preliminary fit, so that they can be used as guesses in the MC iteration
         return ew, sp.specfit.parinfo.values
 
-def readspec(fname):
+def __readspecwithpyspeckit(fname):
     """ Uses pyspeckit to attempt to read fits file of spectrum and load it into an instance of class Spectrum."""
 
     try:
