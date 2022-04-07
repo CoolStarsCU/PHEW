@@ -13,7 +13,7 @@ Python tools to calculate the equivalent width, line depth, and full width at ha
 Please [cite PHEW](https://zenodo.org/record/47889#.Yk8vP27MJTZ) if you use it. 
 
 ### License
-Copyright 2021 The Authors
+Copyright 2022 The Authors
 
 PHEW is free software made available under the MIT license. See LICENSE.txt for further details.
 
