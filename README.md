@@ -1,9 +1,6 @@
 # PHEW (PytHon Equivalent Widths): 
 
-Python tools to calculate the equivalent width, line depth, and full width at half maximum of a line for a given spectrum using  [PySpecKit](https://github.com/pyspeckit/pyspeckit).
-
-### Information
-Created on July 8, 2015 from a variety of spectral line analysis routines I have written in the past. All uncertainties on measurements are estimated via Monte Carlo iterations. 
+Python tools to calculate the equivalent width, line depth, and full width at half maximum of a line for a given spectrum using  [PySpecKit](https://github.com/pyspeckit/pyspeckit). All uncertainties on measurements are estimated via Monte Carlo iterations.  
 
 ### Files
 1. EqW.py - calculates equivalent width (EqW) and estimates uncertainty via Monte Carlo iterations
@@ -11,11 +8,17 @@ Created on July 8, 2015 from a variety of spectral line analysis routines I have
 3. linedepth.py - calculates line depth and estimates uncertainty via Monte Carlo iterations
 
 ### Referencing
-[![DOI](https://zenodo.org/badge/20971/munazzaalam/PHEW.svg)](https://zenodo.org/badge/latestdoi/20971/munazzaalam/PHEW)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.47889.svg)](https://doi.org/10.5281/zenodo.47889)
 
-Please [cite PHEW](https://zenodo.org/badge/latestdoi/20971/munazzaalam/PHEW) if you use it. 
+Please [cite PHEW](https://zenodo.org/record/47889#.Yk8vP27MJTZ) if you use it. 
 
 ### License
-Copyright 2021
+Copyright 2021 The Authors
 
 PHEW is free software made available under the MIT license. See LICENSE.txt for further details.
+
+### Authors
+ - Alejandro Núñez
+ - Stephanie T. Douglas
+ - Munazza Alam
+ - Stan DeLaurentiis
