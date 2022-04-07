@@ -8,9 +8,9 @@ Python tools to calculate the equivalent width, line depth, and full width at ha
 3. linedepth.py - calculates line depth and estimates uncertainty via Monte Carlo iterations
 
 ### Referencing
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.47889.svg)](https://doi.org/10.5281/zenodo.47889)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6422571.svg)](https://doi.org/10.5281/zenodo.6422571)
 
-Please [cite PHEW](https://zenodo.org/record/47889#.Yk8vP27MJTZ) if you use it. 
+Please [cite PHEW](https://doi.org/10.5281/zenodo.6422571) if you use it. 
 
 ### License
 Copyright 2022 The Authors
