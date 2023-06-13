@@ -76,7 +76,8 @@ def fit_runner(path):
                 print('\n'+spec)
                 print(c)
                 print('\n')
-                specname=spec.split('.')[0]
+                tmploc = spec.find('.fit')
+                specname= spec[:tmploc]
                 try:
                     specinfo=rs.read_spec(path+"/"+spec) #reading the fits file into array
                     ew.equivalent_width(specinfo, bandloc, xmin, xmax, excludemin, excludemax, name=specname, fldr=path, mc=False, interactive=False)
@@ -267,7 +268,7 @@ def mc_run(path):
             eqwmu=float(histdata[0])
             eqwsig=float(histdata[1])
             print('\n')
-            print('EW: '+str(EWmu)+', EW_SIG: '+str(eqwsig))
+            print('EW: '+str(eqwmu)+', EW_SIG: '+str(eqwsig))
             print('\n')
             f=open(path+'/EW_VALS_ALL.csv', 'a')
             writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EW_MU', 'EW_SIG'])
