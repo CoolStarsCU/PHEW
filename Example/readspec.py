@@ -231,6 +231,27 @@ def __get_spec(fitsData, fitsHeader, fileName, errorVals, isHARPS, verb=True):
         validData = [fitsData['WAVE'][0], fitsData['FLUX'][0], fitsData['ERR'][0]]
         return validData
 
+    # Fetch spectral data from PYPEIT reduction pipeline
+    try:
+        tmpcols = fitsData.columns
+    except AttributeError:
+        tmpcols = None
+    if tmpcols is not None:
+        if 'BOX_WAVE' in fitsData.columns.names:
+            # Format from typical pipeline product
+            tmpwave = fitsData['BOX_WAVE']
+            tmpflux = fitsData['BOX_FLAM'] * 1e-17
+            tmpfluxerr = fitsData['BOX_FLAM_SIG'] * 1e-17
+            validData = [tmpwave, tmpflux, tmpfluxerr]
+            return validData
+        if 'wave' in fitsData.columns.names:
+            # Format for co-added spectra
+            tmpwave = fitsData['wave']
+            tmpflux = fitsData['flux'] * 1e-17
+            tmpfluxerr = np.sqrt(1 / fitsData['ivar']) * 1e-17
+            validData = [tmpwave, tmpflux, tmpfluxerr]
+            return validData
+        
     # Identify number of data sets in fits file
     dimNum = len(fitsData)
 
@@ -245,6 +266,32 @@ def __get_spec(fitsData, fitsHeader, fileName, errorVals, isHARPS, verb=True):
             isLAMOST = False
     except KeyError:
         isLAMOST = False
+    
+    # Determine if fits file is from PYPEIT pipeline
+    try:
+        if 'BOX_WAVE' in fitsData.columns.names or 'wave' in fitsData.columns.names:
+            isPYPEIT = True
+        else:
+            isPYPEIT = False
+    except AttributeError:
+        isPYPEIT = False
+    
+    # Extract spectrum from PYPEIT fits files
+    if isPYPEIT:
+        try:
+            tmpwave = fitsData['BOX_WAVE']
+        except KeyError:
+            tmpwave = fitsData['wave']
+        try:
+            tmpflux = fitsData['BOX_FLAM'] * 1e-17
+        except KeyError:
+            tmpflux = fitsData['flux'] * 1e-17
+        try:
+            tmpfluxerr = fitsData['BOX_FLAM_SIG'] * 1e-17
+        except KeyError:
+            tmpfluxerr = np.sqrt(1 / fitsData['ivar']) * 1e-17
+        validData = [tmpwave, tmpflux, tmpfluxerr]
+        return validData
     
     # Identify data sets in fits file
     if dimNum == 1:
