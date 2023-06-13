@@ -6,9 +6,12 @@ Created on Wed Aug  4 17:14:05 2021
 """
 
 import EW as ew
+import numpy as np
+import matplotlib.pyplot as plt
 import csv
 import os
 import readspec as rs
+import subprocess
 
 # Edit this path as needed
 path='/Users/alejo/PHEW/Example/TEST_PHEW_LITE/'
@@ -39,6 +42,7 @@ while spec_count>0:
         try:
             specinfo=rs.read_spec(path+spec)
             ew.equivalent_width(specinfo, bandloc, xmin, xmax, exclude_min, exclude_max, mc=False, interactive=False, name=specname)
+            subprocess.call(['open', specname+'_EWfit.pdf'])
         except(AttributeError, ValueError):
             print(str(specname)+' is a FAULTED SPECTRUM')
             spec_count=spec_count-1
@@ -91,4 +95,4 @@ for specname in specparams:
     writer=csv.DictWriter(f, fieldnames=['SPECNAME', 'EQW_MU', 'EQW_SIG'])
     writer.writerow({'SPECNAME':specname, 'EQW_MU':eqwmu, 'EQW_SIG':eqwsig})
     f.close()
-   
+

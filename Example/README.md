@@ -5,7 +5,7 @@ This folder provides two example methods to use PHEW when measuring the equivale
 ## Sample Code ##
 
 * __EW_AUTOMATED_LITE__
-  * This is a bare-bones code highlighting a way to use PHEW when dealing with many spectra. Being so bare-bones, this code gives a lot of room for the user to     embellish upon and add features they need.
+  * This is a bare-bones code highlighting a way to use PHEW when dealing with many spectra. Being so bare-bones, this code gives a lot of room for the user to     embellish upon and add features they need. Once the example files are subsituted with the users' own, the script can be run from the command line or the users' IDE of choice.
 
 * __EW_WRAPPER_INTERACTIVE__
   * This is a highly interactive wrapper that contains much of the needed functionality to efficiently and methodically measure equivalent widths for a large quantitiy of spectra. Further documentation can be found in "EW_README.md"
@@ -19,4 +19,4 @@ This folder provides two example methods to use PHEW when measuring the equivale
   * This folder contains simple sample spectra that work well to show the capabilities of *__EW_AUTOMATED_LITE__*
 
 * __TEST_PHEW_SAMP__ 
-  * This folder contains a more diverse set of sample spectra that show off the capabilities of *__EW_AUTOMATED_INTERACTIVE__*
+  * This folder contains a more diverse set of sample spectra that show off the capabilities of *__EW_WRAPPER_INTERACTIVE__*
