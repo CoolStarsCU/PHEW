@@ -70,6 +70,7 @@ def read_spec(specFiles, errors=True, negtonan=False, linear=False, ext=0, verbo
                         isSDSS = True
                         tmpext = 1
                     if tmptelescope.find('LAMOST') != -1:
+                        # In some old LAMOST spectra the flux and wavelength arrays are processed differently
                         isLAMOST = True
                     
                     if not isSDSS:
@@ -249,6 +250,13 @@ def __get_spec(fitsData, fitsHeader, fileName, errorVals, isHARPS, verb=True):
             tmpwave = fitsData['wave']
             tmpflux = fitsData['flux'] * 1e-17
             tmpfluxerr = np.sqrt(1 / fitsData['ivar']) * 1e-17
+            validData = [tmpwave, tmpflux, tmpfluxerr]
+            return validData
+        if 'WAVELENGTH' in fitsData.columns.names:
+            # Format for new LAMOST spectra
+            tmpwave = fitsData['WAVELENGTH'][0]
+            tmpflux = fitsData['FLUX'][0] * 1e-17 # Not 100% sure that it's 1e-17
+            tmpfluxerr = np.sqrt(1 / fitsData['IVAR'][0]) * 1e-17 # Not 100% sure that it's 1e-17
             validData = [tmpwave, tmpflux, tmpfluxerr]
             return validData
         
